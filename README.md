@@ -94,6 +94,14 @@ parsing numbers inside `try`/`except`).
 
 ## Run Tests
 
+Branch coverage is enabled in `pyproject.toml`, so this command enforces 100%
+of both lines and branches:
+
 ```bash
 python -m pytest --cov=calculator --cov-report=term-missing --cov-fail-under=100
 ```
+
+### Coverage exceptions
+
+`# pragma: no cover` is used only for code that cannot be exercised by the test
+suite, such as the module entry-point guard in `src/calculator/main.py`.
