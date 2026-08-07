@@ -17,6 +17,7 @@ from .exceptions import ConfigError
 DEFAULT_HISTORY_FILE = "calculator_history.csv"
 DEFAULT_AUTO_SAVE = "true"
 DEFAULT_MAX_HISTORY = "100"
+DEFAULT_LOG_FILE = "calculator.log"
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _FALSE_VALUES = {"0", "false", "no", "off"}
@@ -46,6 +47,7 @@ class CalculatorConfig:
     history_file: Path
     auto_save: bool
     max_history_size: int
+    log_file: Path = Path(DEFAULT_LOG_FILE)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "CalculatorConfig":
@@ -57,4 +59,5 @@ class CalculatorConfig:
             history_file=Path(env.get("CALCULATOR_HISTORY_FILE", DEFAULT_HISTORY_FILE)),
             auto_save=_parse_bool(env.get("CALCULATOR_AUTO_SAVE", DEFAULT_AUTO_SAVE)),
             max_history_size=_parse_positive_int(env.get("CALCULATOR_MAX_HISTORY", DEFAULT_MAX_HISTORY)),
+            log_file=Path(env.get("CALCULATOR_LOG_FILE", DEFAULT_LOG_FILE)),
         )

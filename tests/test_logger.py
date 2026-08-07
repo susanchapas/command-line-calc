@@ -1,6 +1,24 @@
 import logging
 
+import pytest
+
+from app.calculation import Calculation
 from app.logger import LOG_FORMAT, LOGGER_NAME, configure_logging, get_logger
+from app.observers import LoggingObserver
+
+
+@pytest.fixture
+def restore_root_logger():
+    root = logging.getLogger()
+    saved_handlers, saved_level = root.handlers[:], root.level
+
+    yield
+
+    for handler in root.handlers:
+        if handler not in saved_handlers:
+            handler.close()
+    root.handlers[:] = saved_handlers
+    root.setLevel(saved_level)
 
 
 def test_defaults_to_the_application_logger():
@@ -17,4 +35,29 @@ def test_configure_logging_applies_level_and_format(monkeypatch):
 
     configure_logging(logging.DEBUG)
 
-    assert captured == {"level": logging.DEBUG, "format": LOG_FORMAT}
+    assert captured["level"] == logging.DEBUG
+    assert captured["format"] == LOG_FORMAT
+    assert [type(handler) for handler in captured["handlers"]] == [logging.StreamHandler]
+
+
+def test_configure_logging_adds_a_file_handler(monkeypatch, tmp_path):
+    captured = {}
+    monkeypatch.setattr("app.logger.logging.basicConfig", lambda **kwargs: captured.update(kwargs))
+
+    configure_logging(log_file=tmp_path / "calculator.log")
+
+    assert [type(handler) for handler in captured["handlers"]] == [
+        logging.StreamHandler,
+        logging.FileHandler,
+    ]
+    for handler in captured["handlers"]:
+        handler.close()
+
+
+def test_logged_calculations_reach_the_log_file(tmp_path, restore_root_logger):
+    log_file = tmp_path / "logs" / "calculator.log"
+
+    configure_logging(log_file=log_file)
+    LoggingObserver().notify(Calculation("add", 2, 3, 5))
+
+    assert "Calculation: add(2, 3) = 5" in log_file.read_text()

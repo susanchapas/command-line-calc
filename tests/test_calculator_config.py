@@ -12,6 +12,7 @@ def test_defaults_when_env_empty():
     assert config.history_file == Path("calculator_history.csv")
     assert config.auto_save is True
     assert config.max_history_size == 100
+    assert config.log_file == Path("calculator.log")
 
 
 def test_reads_custom_values():
@@ -20,12 +21,14 @@ def test_reads_custom_values():
             "CALCULATOR_HISTORY_FILE": "out/history.csv",
             "CALCULATOR_AUTO_SAVE": "off",
             "CALCULATOR_MAX_HISTORY": "5",
+            "CALCULATOR_LOG_FILE": "out/calculator.log",
         }
     )
 
     assert config.history_file == Path("out/history.csv")
     assert config.auto_save is False
     assert config.max_history_size == 5
+    assert config.log_file == Path("out/calculator.log")
 
 
 @pytest.mark.parametrize("value", ["true", "1", "YES", "On"])

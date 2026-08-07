@@ -86,6 +86,7 @@ Settings are read from the environment (and an optional `.env` file via
 | `CALCULATOR_HISTORY_FILE` | `calculator_history.csv` | CSV file used for auto-save/load |
 | `CALCULATOR_AUTO_SAVE` | `true` | persist history after each calculation |
 | `CALCULATOR_MAX_HISTORY` | `100` | maximum number of stored calculations |
+| `CALCULATOR_LOG_FILE` | `calculator.log` | file each calculation is logged to |
 
 Invalid values (e.g. a non-numeric `CALCULATOR_MAX_HISTORY`) are rejected at
 startup with a clear message.
