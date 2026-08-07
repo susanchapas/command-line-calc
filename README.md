@@ -81,15 +81,49 @@ Result: 25 %of 200 = 12.5
 Settings are read from the environment (and an optional `.env` file via
 `python-dotenv`). Copy `.env.example` to `.env` to customize them:
 
+```bash
+cp .env.example .env
+```
+
+**Base directories** — created on startup if they do not exist:
+
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `CALCULATOR_HISTORY_FILE` | `calculator_history.csv` | CSV file used for auto-save/load |
-| `CALCULATOR_AUTO_SAVE` | `true` | persist history after each calculation |
-| `CALCULATOR_MAX_HISTORY` | `100` | maximum number of stored calculations |
-| `CALCULATOR_LOG_FILE` | `calculator.log` | file each calculation is logged to |
+| `CALCULATOR_LOG_DIR` | `logs` | directory for log files |
+| `CALCULATOR_HISTORY_DIR` | `history` | directory for history files |
 
-Invalid values (e.g. a non-numeric `CALCULATOR_MAX_HISTORY`) are rejected at
-startup with a clear message.
+**History settings:**
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `CALCULATOR_MAX_HISTORY_SIZE` | `100` | maximum number of stored calculations |
+| `CALCULATOR_AUTO_SAVE` | `true` | persist history after each calculation |
+
+**Calculation settings:**
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `CALCULATOR_PRECISION` | `10` | decimal places each result is rounded to |
+| `CALCULATOR_MAX_INPUT_VALUE` | `1e12` | largest accepted operand magnitude |
+| `CALCULATOR_DEFAULT_ENCODING` | `utf-8` | encoding for the log and history files |
+
+**File names**, resolved inside the directories above:
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `CALCULATOR_LOG_FILE` | `calculator.log` | file each calculation is logged to |
+| `CALCULATOR_HISTORY_FILE` | `calculator_history.csv` | CSV file used for auto-save/load |
+
+So the defaults put the log at `logs/calculator.log` and the history at
+`history/calculator_history.csv`. Giving either file name as an absolute path
+overrides its base directory.
+
+Every value is parsed and validated when the application starts, so invalid
+configuration (a non-numeric `CALCULATOR_MAX_HISTORY_SIZE`, a negative
+`CALCULATOR_PRECISION`, an unknown `CALCULATOR_DEFAULT_ENCODING`) is reported
+immediately with a `ConfigError` message rather than failing later. Any
+variable that is not set falls back to the default in the tables above, so the
+application runs with no `.env` file at all.
 
 ## Project structure
 
@@ -138,8 +172,9 @@ The application is organized around the patterns the assignment calls for:
 
 Supporting modules: `exceptions.py` holds the error hierarchy (every raised
 error derives from `CalculatorError`), `input_validators.py` parses REPL
-operands, `logger.py` centralizes logging setup, and `calculator_config.py`
-loads settings from the environment.
+operands and range-checks them against `CALCULATOR_MAX_INPUT_VALUE`,
+`logger.py` centralizes logging setup, and `calculator_config.py` loads and
+validates settings from the environment.
 
 Error handling uses both **LBYL** (validating configuration and checking for an
 existing history file before loading) and **EAFP** (executing operations and

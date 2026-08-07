@@ -1,18 +1,22 @@
 """Entry point for the calculator application."""
 
-from .calculator_config import CalculatorConfig
+from .calculator_config import DEFAULT_ENCODING, CalculatorConfig
 from .cli import run_repl
 from .exceptions import ConfigError
 from .logger import configure_logging
 
 
 def main() -> int:
+    log_file, encoding = None, DEFAULT_ENCODING
     try:
-        log_file = CalculatorConfig.from_env().log_file
+        config = CalculatorConfig.from_env()
     except ConfigError:
-        log_file = None  # run_repl reports the configuration error and exits
+        pass  # run_repl reports the configuration error and exits
+    else:
+        config.ensure_directories()
+        log_file, encoding = config.log_file, config.default_encoding
 
-    configure_logging(log_file=log_file)
+    configure_logging(log_file=log_file, encoding=encoding)
     return run_repl()
 
 

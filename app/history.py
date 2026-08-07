@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from .calculation import Calculation
+from .calculator_config import DEFAULT_ENCODING, DEFAULT_MAX_HISTORY_SIZE
 from .exceptions import HistoryError
 
 COLUMNS = ("operation", "a", "b", "result")
@@ -13,8 +14,13 @@ COLUMNS = ("operation", "a", "b", "result")
 class HistoryManager:
     """Store calculation history in a :class:`pandas.DataFrame`."""
 
-    def __init__(self, max_size: int = 100) -> None:
+    def __init__(
+        self,
+        max_size: int = int(DEFAULT_MAX_HISTORY_SIZE),
+        encoding: str = DEFAULT_ENCODING,
+    ) -> None:
         self._max_size = max_size
+        self._encoding = encoding
         self._df = self._empty_frame()
 
     @staticmethod
@@ -59,13 +65,15 @@ class HistoryManager:
         return self._df.copy()
 
     def save(self, path: Path | str) -> None:
-        self._df.to_csv(path, index=False)
+        self._df.to_csv(path, index=False, encoding=self._encoding)
 
     def load(self, path: Path | str) -> None:
         try:
-            frame = pd.read_csv(path)
+            frame = pd.read_csv(path, encoding=self._encoding)
         except pd.errors.EmptyDataError as exc:
             raise HistoryError("History file is empty.") from exc
+        except UnicodeDecodeError as exc:
+            raise HistoryError(f"History file is not valid {self._encoding} text.") from exc
 
         missing = [column for column in COLUMNS if column not in frame.columns]
         if missing:

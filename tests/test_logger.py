@@ -44,12 +44,13 @@ def test_configure_logging_adds_a_file_handler(monkeypatch, tmp_path):
     captured = {}
     monkeypatch.setattr("app.logger.logging.basicConfig", lambda **kwargs: captured.update(kwargs))
 
-    configure_logging(log_file=tmp_path / "calculator.log")
+    configure_logging(log_file=tmp_path / "calculator.log", encoding="latin-1")
 
     assert [type(handler) for handler in captured["handlers"]] == [
         logging.StreamHandler,
         logging.FileHandler,
     ]
+    assert captured["handlers"][1].encoding == "latin-1"
     for handler in captured["handlers"]:
         handler.close()
 

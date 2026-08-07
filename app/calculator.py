@@ -11,6 +11,7 @@ from .calculator_config import CalculatorConfig
 from .calculator_memento import HistoryCaretaker, HistoryMemento
 from .factory import OperationFactory
 from .history import HistoryManager
+from .input_validators import validate_range
 from .observers import AutoSaveObserver, CalculationObserver, LoggingObserver
 
 
@@ -21,8 +22,12 @@ class Calculator:
         observers: list[CalculationObserver] | None = None,
     ) -> None:
         self.config = config or CalculatorConfig.from_env()
+        self.config.ensure_directories()
         self.factory = OperationFactory()
-        self.history = HistoryManager(max_size=self.config.max_history_size)
+        self.history = HistoryManager(
+            max_size=self.config.max_history_size,
+            encoding=self.config.default_encoding,
+        )
         self.caretaker = HistoryCaretaker()
         self._observers: list[CalculationObserver] = []
 
@@ -61,7 +66,9 @@ class Calculator:
 
     def perform(self, operation: str, left: float, right: float) -> Calculation:
         strategy = self.factory.create(operation)
-        result = strategy.execute(left, right)
+        validate_range(left, self.config.max_input_value)
+        validate_range(right, self.config.max_input_value)
+        result = round(strategy.execute(left, right), self.config.precision)
         calculation = Calculation(strategy.name, left, right, result)
         self.caretaker.save_state(self._snapshot())
         self.history.add(calculation)

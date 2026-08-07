@@ -101,3 +101,24 @@ def test_load_rejects_empty_file(tmp_path):
     history = HistoryManager()
     with pytest.raises(HistoryError, match="empty"):
         history.load(path)
+
+
+def test_round_trip_honours_the_configured_encoding(tmp_path):
+    path = tmp_path / "history.csv"
+    history = HistoryManager(encoding="latin-1")
+    history.add(make_calc("add", 2, 3, 5))
+    history.save(path)
+
+    reloaded = HistoryManager(encoding="latin-1")
+    reloaded.load(path)
+
+    assert reloaded.calculations() == history.calculations()
+
+
+def test_load_rejects_text_the_encoding_cannot_decode(tmp_path):
+    path = tmp_path / "history.csv"
+    path.write_bytes("operation,a,b,result\naddé,1,2,3\n".encode())
+
+    history = HistoryManager(encoding="ascii")
+    with pytest.raises(HistoryError, match="not valid ascii text"):
+        history.load(path)

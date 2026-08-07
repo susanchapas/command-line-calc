@@ -8,5 +8,7 @@ build/
 *.egg-info/
 .DS_Store
 .env
+logs/
+history/
 calculator_history.csv
 calculator.log

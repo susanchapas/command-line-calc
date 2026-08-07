@@ -3,6 +3,8 @@
 import logging
 from pathlib import Path
 
+from .calculator_config import DEFAULT_ENCODING
+
 LOGGER_NAME = "calculator"
 LOG_FORMAT = "%(asctime)s %(name)s: %(message)s"
 
@@ -12,13 +14,17 @@ def get_logger(name: str | None = None) -> logging.Logger:
     return logging.getLogger(name or LOGGER_NAME)
 
 
-def configure_logging(level: int = logging.INFO, log_file: Path | str | None = None) -> None:
+def configure_logging(
+    level: int = logging.INFO,
+    log_file: Path | str | None = None,
+    encoding: str = DEFAULT_ENCODING,
+) -> None:
     """Attach a console handler, plus a file handler when ``log_file`` is given."""
     handlers: list[logging.Handler] = [logging.StreamHandler()]
 
     if log_file is not None:
         path = Path(log_file)
         path.parent.mkdir(parents=True, exist_ok=True)
-        handlers.append(logging.FileHandler(path, encoding="utf-8"))
+        handlers.append(logging.FileHandler(path, encoding=encoding))
 
     logging.basicConfig(level=level, format=LOG_FORMAT, handlers=handlers, force=True)
