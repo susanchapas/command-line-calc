@@ -1,5 +1,6 @@
 import pytest
 
+from app.exceptions import OperationError
 from app.operations import (
     abs_diff,
     add,
@@ -43,36 +44,29 @@ def test_operations(func, left, right, expected):
     assert func(left, right) == pytest.approx(expected)
 
 
-def test_divide_by_zero():
-    with pytest.raises(ZeroDivisionError, match="Cannot divide by zero."):
-        divide(1, 0)
+@pytest.mark.parametrize(
+    ("func", "left", "right", "message"),
+    [
+        (divide, 1, 0, "Cannot divide by zero."),
+        (int_divide, 7, 0, "Cannot divide by zero."),
+        (modulus, 7, 0, "modulus by zero"),
+        (percentage, 7, 0, "percentage of zero"),
+        (power, -2, 0.5, "not a real number"),
+        (power, 0, -1, "zero to a negative power"),
+        (root, 8, 0, "zeroth root"),
+        (root, -8, 2, "negative number"),
+        (root, 0, -1, "negative root of zero"),
+    ],
+)
+def test_invalid_operands_raise_operation_error(func, left, right, message):
+    with pytest.raises(OperationError, match=message):
+        func(left, right)
 
 
-def test_power_rejects_complex_result():
-    with pytest.raises(ValueError, match="not a real number"):
-        power(-2, 0.5)
-
-
-def test_root_rejects_zeroth_root():
-    with pytest.raises(ZeroDivisionError, match="zeroth root"):
-        root(8, 0)
-
-
-def test_root_rejects_negative_radicand():
-    with pytest.raises(ValueError, match="negative number"):
-        root(-8, 2)
-
-
-def test_modulus_rejects_zero_divisor():
-    with pytest.raises(ZeroDivisionError, match="modulus of zero"):
-        modulus(7, 0)
-
-
-def test_int_divide_rejects_zero_divisor():
-    with pytest.raises(ZeroDivisionError, match="Cannot divide by zero."):
-        int_divide(7, 0)
-
-
-def test_percentage_rejects_zero_whole():
-    with pytest.raises(ZeroDivisionError, match="percentage of zero"):
-        percentage(7, 0)
+@pytest.mark.parametrize(
+    ("func", "left", "right"),
+    [(power, 1e10, 1e10), (root, 0.5, -1e-300)],
+)
+def test_overflowing_results_raise_overflow_error(func, left, right):
+    with pytest.raises(OverflowError):
+        func(left, right)

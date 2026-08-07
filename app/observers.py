@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from .calculation import Calculation
+from .exceptions import HistoryError
 from .history import HistoryManager
 from .logger import get_logger
 
@@ -44,6 +45,14 @@ class AutoSaveObserver(CalculationObserver):
     def __init__(self, history: HistoryManager, path: Path) -> None:
         self._history = history
         self._path = path
+        self._logger = get_logger()
 
     def notify(self, calculation: Calculation) -> None:
-        self._history.save(self._path)
+        """Save the history, logging rather than raising if the write fails.
+
+        A calculation the user already made must not be lost to a disk error.
+        """
+        try:
+            self._history.save(self._path)
+        except HistoryError as error:
+            self._logger.error("Auto-save failed: %s", error)

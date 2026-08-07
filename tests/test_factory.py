@@ -1,5 +1,6 @@
 import pytest
 
+from app.exceptions import OperationError
 from app.factory import OperationFactory
 from app.strategies import AbsDiffStrategy, AddStrategy, RootStrategy
 
@@ -21,7 +22,7 @@ def test_create_normalizes_input():
 def test_create_rejects_unknown_operation():
     factory = OperationFactory()
 
-    with pytest.raises(ValueError, match="Choose one of"):
+    with pytest.raises(OperationError, match="Choose one of"):
         factory.create("logarithm")
 
 

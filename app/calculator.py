@@ -4,15 +4,23 @@
 observers, and memento-based undo/redo behind a handful of methods.
 """
 
+import math
 from pathlib import Path
 
 from .calculation import Calculation
 from .calculator_config import CalculatorConfig
 from .calculator_memento import HistoryCaretaker, HistoryMemento
+from .exceptions import HistoryError, OperationError
 from .factory import OperationFactory
 from .history import HistoryManager
 from .input_validators import validate_range
+from .logger import get_logger
 from .observers import AutoSaveObserver, CalculationObserver, LoggingObserver
+from .strategies import OperationStrategy
+
+logger = get_logger()
+
+RESULT_TOO_LARGE = "Result is too large to represent."
 
 
 class Calculator:
@@ -59,16 +67,36 @@ class Calculator:
         """Mirror in-memory history to disk when auto-save is enabled.
 
         ``perform`` is covered by :class:`AutoSaveObserver`; the other
-        state-changing methods persist through here.
+        state-changing methods persist through here. A failed auto-save is
+        logged rather than raised, because the in-memory history is still
+        correct and an explicit ``save`` reports the problem directly.
         """
-        if self.config.auto_save:
+        if not self.config.auto_save:
+            return
+        try:
             self.save()
+        except HistoryError as error:
+            logger.error("Auto-save failed: %s", error)
+
+    @staticmethod
+    def _execute(strategy: OperationStrategy, left: float, right: float) -> float:
+        """Return the strategy's result, rejecting values floats cannot hold.
+
+        :raises OperationError: if the result overflows or is not finite.
+        """
+        try:
+            result = strategy.execute(left, right)
+        except OverflowError as exc:
+            raise OperationError(RESULT_TOO_LARGE) from exc
+        if not math.isfinite(result):
+            raise OperationError(RESULT_TOO_LARGE)
+        return result
 
     def perform(self, operation: str, left: float, right: float) -> Calculation:
         strategy = self.factory.create(operation)
         validate_range(left, self.config.max_input_value)
         validate_range(right, self.config.max_input_value)
-        result = round(strategy.execute(left, right), self.config.precision)
+        result = round(self._execute(strategy, left, right), self.config.precision)
         calculation = Calculation(strategy.name, left, right, result)
         self.caretaker.save_state(self._snapshot())
         self.history.add(calculation)

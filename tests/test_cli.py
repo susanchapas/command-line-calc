@@ -1,5 +1,7 @@
 import pytest
 
+from app.calculator import Calculator
+from app.calculator_config import CalculatorConfig
 from app.cli import run_repl
 from app.exceptions import ConfigError, HistoryError
 
@@ -205,3 +207,56 @@ def test_reports_startup_error(monkeypatch, error):
 
     assert code == 1
     assert outputs == [f"Startup error: {error}"]
+
+
+@pytest.mark.parametrize(
+    "command",
+    ["power 1e10 1e10", "divide 1e12 1e-300", "root 0.5 -1e-300"],
+)
+def test_operation_reports_unrepresentable_result(calculator, command):
+    _, outputs = drive(calculator, [command, "exit"])
+
+    assert "Result is too large to represent." in outputs
+
+
+def test_operation_reports_zero_to_negative_power(calculator):
+    _, outputs = drive(calculator, ["power 0 -1", "exit"])
+
+    assert "Cannot raise zero to a negative power." in outputs
+
+
+def test_load_reports_malformed_csv(calculator, tmp_path):
+    bad = tmp_path / "ragged.csv"
+    bad.write_text("operation,a,b,result\nadd,1,2,3\nadd,1,2,3,4,5\n")
+
+    _, outputs = drive(calculator, [f"load {bad}", "exit"])
+
+    assert any("not valid CSV" in line for line in outputs)
+
+
+def test_load_reports_non_numeric_values(calculator, tmp_path):
+    bad = tmp_path / "text.csv"
+    bad.write_text("operation,a,b,result\nadd,x,2,3\n")
+
+    _, outputs = drive(calculator, [f"load {bad}", "exit"])
+
+    assert any("non-numeric" in line for line in outputs)
+
+
+def test_autosave_failure_does_not_stop_the_repl(tmp_path):
+    config = CalculatorConfig(
+        log_dir=tmp_path / "logs",
+        history_dir=tmp_path / "history",
+        auto_save=True,
+        history_filename="history.csv",
+    )
+    calculator = Calculator(config=config)
+    config.history_dir.chmod(0o500)
+
+    try:
+        _, outputs = drive(calculator, ["add 2 3", "exit"])
+    finally:
+        config.history_dir.chmod(0o700)
+
+    assert "Result: 2 + 3 = 5" in outputs
+    assert outputs[-1] == "Goodbye!"

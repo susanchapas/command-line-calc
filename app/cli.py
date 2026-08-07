@@ -3,7 +3,7 @@
 from collections.abc import Callable
 
 from .calculator import Calculator
-from .exceptions import ConfigError, HistoryError, ValidationError
+from .exceptions import ConfigError, HistoryError, OperationError, ValidationError
 from .input_validators import validate_operands
 
 QUIT_COMMANDS = {"exit", "quit", "q"}
@@ -46,7 +46,7 @@ def run_operation(calculator: Calculator, operation: str, args: list[str]) -> tu
     try:
         left, right = validate_operands(args)
         calculation = calculator.perform(operation, left, right)
-    except (ValidationError, ZeroDivisionError, ValueError) as error:
+    except (ValidationError, OperationError) as error:
         return (str(error),)
 
     return (f"Result: {calculator.format(calculation)}",)
@@ -76,7 +76,7 @@ def cmd_redo(calculator: Calculator, args: list[str]) -> tuple[str, ...]:
 def cmd_save(calculator: Calculator, args: list[str]) -> tuple[str, ...]:
     try:
         target = calculator.save(args[0] if args else None)
-    except OSError as error:
+    except HistoryError as error:
         return (f"Could not save history: {error}",)
     return (f"History saved to {target}.",)
 
@@ -84,7 +84,7 @@ def cmd_save(calculator: Calculator, args: list[str]) -> tuple[str, ...]:
 def cmd_load(calculator: Calculator, args: list[str]) -> tuple[str, ...]:
     try:
         target = calculator.load(args[0] if args else None)
-    except (OSError, HistoryError) as error:
+    except HistoryError as error:
         return (f"Could not load history: {error}",)
     return (f"History loaded from {target}.",)
 

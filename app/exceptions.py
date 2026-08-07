@@ -15,7 +15,11 @@ class ConfigError(CalculatorError):
 
 
 class HistoryError(CalculatorError):
-    """Raised when a history file cannot be loaded."""
+    """Raised when a history file cannot be read, written, or parsed."""
+
+
+class OperationError(CalculatorError):
+    """Raised when an operation cannot produce a usable result."""
 
 
 class ValidationError(CalculatorError):

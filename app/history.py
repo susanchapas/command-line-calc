@@ -7,8 +7,10 @@ import pandas as pd
 from .calculation import Calculation
 from .calculator_config import DEFAULT_ENCODING, DEFAULT_MAX_HISTORY_SIZE
 from .exceptions import HistoryError
+from .factory import OperationFactory
 
 COLUMNS = ("operation", "a", "b", "result")
+NUMERIC_COLUMNS = ("a", "b", "result")
 
 
 class HistoryManager:
@@ -65,17 +67,58 @@ class HistoryManager:
         return self._df.copy()
 
     def save(self, path: Path | str) -> None:
-        self._df.to_csv(path, index=False, encoding=self._encoding)
+        """Write the history to ``path`` as CSV.
+
+        :raises HistoryError: if the file cannot be written.
+        """
+        try:
+            self._df.to_csv(path, index=False, encoding=self._encoding)
+        except OSError as exc:
+            raise HistoryError(f"Could not write {path}: {exc}") from exc
 
     def load(self, path: Path | str) -> None:
+        """Replace the history with the calculations stored at ``path``.
+
+        :raises HistoryError: if the file is missing, unreadable, or malformed.
+        """
         try:
             frame = pd.read_csv(path, encoding=self._encoding)
+        except FileNotFoundError as exc:
+            raise HistoryError(f"No history file at {path}.") from exc
+        except OSError as exc:
+            raise HistoryError(f"Could not read {path}: {exc}") from exc
         except pd.errors.EmptyDataError as exc:
             raise HistoryError("History file is empty.") from exc
+        except pd.errors.ParserError as exc:
+            raise HistoryError(f"History file is not valid CSV: {str(exc).strip()}") from exc
         except UnicodeDecodeError as exc:
             raise HistoryError(f"History file is not valid {self._encoding} text.") from exc
 
+        self._df = self._validated(frame)
+
+    @staticmethod
+    def _validated(frame: pd.DataFrame) -> pd.DataFrame:
+        """Return ``frame`` narrowed to :data:`COLUMNS`, checking every value.
+
+        Guards the conversions :meth:`calculations` performs later, so bad CSV
+        data is reported here instead of failing when the history is read.
+
+        :raises HistoryError: if a column is missing or holds unusable values.
+        """
         missing = [column for column in COLUMNS if column not in frame.columns]
         if missing:
             raise HistoryError(f"History file is missing columns: {', '.join(missing)}.")
-        self._df = frame[list(COLUMNS)].reset_index(drop=True)
+
+        frame = frame[list(COLUMNS)].reset_index(drop=True)
+        for column in NUMERIC_COLUMNS:
+            values = pd.to_numeric(frame[column], errors="coerce")
+            if values.isna().any():
+                raise HistoryError(f"History column {column!r} has non-numeric values.")
+            frame[column] = values
+
+        unknown = sorted(
+            set(frame["operation"].astype(str)) - set(OperationFactory.available_operations())
+        )
+        if unknown:
+            raise HistoryError(f"History file has unknown operations: {', '.join(unknown)}.")
+        return frame

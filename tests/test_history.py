@@ -122,3 +122,64 @@ def test_load_rejects_text_the_encoding_cannot_decode(tmp_path):
     history = HistoryManager(encoding="ascii")
     with pytest.raises(HistoryError, match="not valid ascii text"):
         history.load(path)
+
+
+def test_load_rejects_missing_file(tmp_path):
+    history = HistoryManager()
+
+    with pytest.raises(HistoryError, match="No history file at"):
+        history.load(tmp_path / "nope.csv")
+
+
+def test_load_rejects_unreadable_path(tmp_path):
+    history = HistoryManager()
+
+    with pytest.raises(HistoryError, match="Could not read"):
+        history.load(tmp_path)
+
+
+def test_load_rejects_ragged_rows(tmp_path):
+    path = tmp_path / "ragged.csv"
+    path.write_text("operation,a,b,result\nadd,1,2,3\nadd,1,2,3,4,5\n")
+
+    history = HistoryManager()
+    with pytest.raises(HistoryError, match="not valid CSV"):
+        history.load(path)
+
+
+@pytest.mark.parametrize("column", ["a", "b", "result"])
+def test_load_rejects_non_numeric_values(tmp_path, column):
+    rows = {"a": "1", "b": "2", "result": "3"}
+    rows[column] = "oops"
+    path = tmp_path / "text.csv"
+    path.write_text(f"operation,a,b,result\nadd,{rows['a']},{rows['b']},{rows['result']}\n")
+
+    history = HistoryManager()
+    with pytest.raises(HistoryError, match=f"column '{column}' has non-numeric"):
+        history.load(path)
+
+
+def test_load_rejects_blank_numeric_cells(tmp_path):
+    path = tmp_path / "blank.csv"
+    path.write_text("operation,a,b,result\nadd,1,,3\n")
+
+    history = HistoryManager()
+    with pytest.raises(HistoryError, match="non-numeric"):
+        history.load(path)
+
+
+def test_load_rejects_unknown_operations(tmp_path):
+    path = tmp_path / "unknown.csv"
+    path.write_text("operation,a,b,result\nlogarithm,8,2,3\n")
+
+    history = HistoryManager()
+    with pytest.raises(HistoryError, match="unknown operations: logarithm"):
+        history.load(path)
+
+
+def test_save_reports_unwritable_path(tmp_path):
+    history = HistoryManager()
+    history.add(make_calc())
+
+    with pytest.raises(HistoryError, match="Could not write"):
+        history.save(tmp_path / "missing" / "out.csv")

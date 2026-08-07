@@ -49,3 +49,14 @@ def test_auto_save_observer_persists_history(tmp_path):
     reloaded = HistoryManager()
     reloaded.load(path)
     assert reloaded.calculations() == (Calculation("add", 2.0, 3.0, 5.0),)
+
+
+def test_autosave_logs_instead_of_raising_when_write_fails(tmp_path, caplog):
+    history = HistoryManager()
+    history.add(Calculation("add", 1, 2, 3))
+    observer = AutoSaveObserver(history, tmp_path / "missing" / "out.csv")
+
+    with caplog.at_level("ERROR"):
+        observer.notify(Calculation("add", 1, 2, 3))
+
+    assert "Auto-save failed" in caplog.text

@@ -2,7 +2,7 @@ import pytest
 
 from app.calculator import Calculator
 from app.calculator_config import CalculatorConfig
-from app.exceptions import ValidationError
+from app.exceptions import OperationError, ValidationError
 from app.history import HistoryManager
 
 
@@ -28,7 +28,7 @@ def test_perform_records_and_formats(calculator):
 
 
 def test_perform_propagates_operation_errors(calculator):
-    with pytest.raises(ZeroDivisionError):
+    with pytest.raises(OperationError, match="Cannot divide by zero."):
         calculator.perform("divide", 1, 0)
 
     assert calculator.calculations() == ()
@@ -266,3 +266,51 @@ def test_history_uses_configured_encoding(tmp_path):
     calculator.save()
 
     assert config.history_file.read_text(encoding="latin-1").startswith("operation,a,b,result")
+
+
+@pytest.mark.parametrize(
+    ("operation", "left", "right"),
+    [("power", 1e10, 1e10), ("root", 0.5, -1e-300)],
+)
+def test_perform_rejects_overflowing_results(calculator, operation, left, right):
+    with pytest.raises(OperationError, match="too large"):
+        calculator.perform(operation, left, right)
+
+    assert calculator.calculations() == ()
+
+
+@pytest.mark.parametrize(
+    ("operation", "left", "right"),
+    [("divide", 1e12, 1e-300), ("int_divide", 1e12, 1e-300), ("percentage", 1e12, 1e-300)],
+)
+def test_perform_rejects_non_finite_results(calculator, operation, left, right):
+    with pytest.raises(OperationError, match="too large"):
+        calculator.perform(operation, left, right)
+
+    assert calculator.calculations() == ()
+
+
+def test_perform_rejects_unknown_operation(calculator):
+    with pytest.raises(OperationError, match="Choose one of"):
+        calculator.perform("logarithm", 8, 2)
+
+
+def test_auto_persist_logs_instead_of_raising(tmp_path, caplog):
+    config = CalculatorConfig(
+        log_dir=tmp_path / "logs",
+        history_dir=tmp_path / "history",
+        auto_save=True,
+        history_filename="history.csv",
+    )
+    calculator = Calculator(config=config, observers=[])
+    calculator.perform("add", 1, 2)
+    config.history_dir.chmod(0o500)
+
+    try:
+        with caplog.at_level("ERROR"):
+            calculator.clear()
+    finally:
+        config.history_dir.chmod(0o700)
+
+    assert "Auto-save failed" in caplog.text
+    assert calculator.calculations() == ()

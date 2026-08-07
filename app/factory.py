@@ -2,6 +2,7 @@
 
 from typing import ClassVar
 
+from .exceptions import OperationError
 from .strategies import (
     AbsDiffStrategy,
     AddStrategy,
@@ -48,10 +49,14 @@ class OperationFactory:
         )
 
     def create(self, operation_name: str) -> OperationStrategy:
+        """Return a strategy instance for ``operation_name``.
+
+        :raises OperationError: if no operation is registered under that name.
+        """
         try:
             strategy_type = self._registry[operation_name.strip().lower()]
         except KeyError as exc:
             valid_operations = ", ".join(self.available_operations())
-            raise ValueError(f"Choose one of: {valid_operations}.") from exc
+            raise OperationError(f"Choose one of: {valid_operations}.") from exc
 
         return strategy_type()
