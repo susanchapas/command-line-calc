@@ -125,6 +125,29 @@ immediately with a `ConfigError` message rather than failing later. Any
 variable that is not set falls back to the default in the tables above, so the
 application runs with no `.env` file at all.
 
+## Logging
+
+`logger.py` configures the standard library `logging` module on startup. The
+log file is `CALCULATOR_LOG_DIR/CALCULATOR_LOG_FILE` and is written with
+`CALCULATOR_DEFAULT_ENCODING`; each line carries a timestamp, level, and
+message:
+
+```
+2026-08-07 09:31:53,261 INFO calculator: Calculation: add(2, 3) = 5
+2026-08-07 09:31:53,262 WARNING calculator: Rejected 'divide 1 0': Cannot divide by zero.
+2026-08-07 09:31:53,263 ERROR calculator: Save failed: Could not write /nope/out.csv
+```
+
+| Level | Used for |
+| --- | --- |
+| `INFO` | startup and shutdown, the effective configuration, every calculation, and each history change (undo, redo, clear, save, load) |
+| `WARNING` | input the calculator refused — bad operands, unknown operations, unknown commands |
+| `ERROR` | failures the user cannot correct by retyping — invalid configuration, and history files that cannot be read or written |
+
+The file records everything from `INFO` up. The console handler is held to
+`WARNING` so the REPL shows only problems and its own output stays readable;
+the full detail is always in the log file.
+
 ## Project structure
 
 ```

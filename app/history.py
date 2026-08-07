@@ -51,6 +51,9 @@ class HistoryManager:
     def is_empty(self) -> bool:
         return self._df.empty
 
+    def __len__(self) -> int:
+        return len(self._df)
+
     def calculations(self) -> tuple[Calculation, ...]:
         return tuple(
             Calculation(str(row.operation), float(row.a), float(row.b), float(row.result))

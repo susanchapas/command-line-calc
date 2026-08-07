@@ -6,7 +6,8 @@ from pathlib import Path
 from .calculator_config import DEFAULT_ENCODING
 
 LOGGER_NAME = "calculator"
-LOG_FORMAT = "%(asctime)s %(name)s: %(message)s"
+LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+CONSOLE_LEVEL = logging.WARNING
 
 
 def get_logger(name: str | None = None) -> logging.Logger:
@@ -19,8 +20,14 @@ def configure_logging(
     log_file: Path | str | None = None,
     encoding: str = DEFAULT_ENCODING,
 ) -> None:
-    """Attach a console handler, plus a file handler when ``log_file`` is given."""
-    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    """Record ``level`` and above in ``log_file``, warnings and above on the console.
+
+    Holding the console to :data:`CONSOLE_LEVEL` keeps the REPL readable while
+    the file still captures every calculation and history change.
+    """
+    console = logging.StreamHandler()
+    console.setLevel(CONSOLE_LEVEL)
+    handlers: list[logging.Handler] = [console]
 
     if log_file is not None:
         path = Path(log_file)

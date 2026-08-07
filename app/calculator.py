@@ -48,10 +48,21 @@ class Calculator:
                 self.add_observer(observer)
 
         self._load_existing_history()
+        logger.info(
+            "Calculator ready: precision=%d, max history=%d, auto-save=%s.",
+            self.config.precision,
+            self.config.max_history_size,
+            self.config.auto_save,
+        )
 
     def _load_existing_history(self) -> None:
         if Path(self.config.history_file).exists():
             self.history.load(self.config.history_file)
+            logger.info(
+                "Restored %d calculations from %s.",
+                len(self.history),
+                self.config.history_file,
+            )
 
     def add_observer(self, observer: CalculationObserver) -> None:
         self._observers.append(observer)
@@ -112,20 +123,25 @@ class Calculator:
     def undo(self) -> bool:
         memento = self.caretaker.undo(self._snapshot())
         if memento is None:
+            logger.info("Nothing to undo.")
             return False
         self.history.restore(memento.state)
+        logger.info("Undid the last change; %d calculations remain.", len(self.history))
         self._auto_persist()
         return True
 
     def redo(self) -> bool:
         memento = self.caretaker.redo(self._snapshot())
         if memento is None:
+            logger.info("Nothing to redo.")
             return False
         self.history.restore(memento.state)
+        logger.info("Redid the last change; %d calculations remain.", len(self.history))
         self._auto_persist()
         return True
 
     def clear(self) -> None:
+        logger.info("Clearing %d calculations from the history.", len(self.history))
         self.caretaker.save_state(self._snapshot())
         self.history.clear()
         self._auto_persist()
@@ -133,6 +149,7 @@ class Calculator:
     def save(self, path: Path | str | None = None) -> Path:
         target = Path(path) if path is not None else Path(self.config.history_file)
         self.history.save(target)
+        logger.info("Saved %d calculations to %s.", len(self.history), target)
         return target
 
     def load(self, path: Path | str | None = None) -> Path:
@@ -140,5 +157,6 @@ class Calculator:
         snapshot = self._snapshot()
         self.history.load(target)
         self.caretaker.save_state(snapshot)
+        logger.info("Loaded %d calculations from %s.", len(self.history), target)
         self._auto_persist()
         return target

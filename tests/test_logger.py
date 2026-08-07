@@ -3,7 +3,7 @@ import logging
 import pytest
 
 from app.calculation import Calculation
-from app.logger import LOG_FORMAT, LOGGER_NAME, configure_logging, get_logger
+from app.logger import CONSOLE_LEVEL, LOG_FORMAT, LOGGER_NAME, configure_logging, get_logger
 from app.observers import LoggingObserver
 
 
@@ -62,3 +62,25 @@ def test_logged_calculations_reach_the_log_file(tmp_path, restore_root_logger):
     LoggingObserver().notify(Calculation("add", 2, 3, 5))
 
     assert "Calculation: add(2, 3) = 5" in log_file.read_text()
+
+
+def test_console_handler_is_limited_to_warnings(monkeypatch):
+    captured = {}
+    monkeypatch.setattr("app.logger.logging.basicConfig", lambda **kwargs: captured.update(kwargs))
+
+    configure_logging()
+
+    assert captured["handlers"][0].level == CONSOLE_LEVEL
+
+
+@pytest.mark.parametrize(
+    ("level", "expected"),
+    [(logging.INFO, "INFO"), (logging.WARNING, "WARNING"), (logging.ERROR, "ERROR")],
+)
+def test_log_file_records_the_level_name(tmp_path, restore_root_logger, level, expected):
+    log_file = tmp_path / "calculator.log"
+
+    configure_logging(log_file=log_file)
+    get_logger().log(level, "something happened")
+
+    assert f"{expected} {LOGGER_NAME}: something happened" in log_file.read_text()

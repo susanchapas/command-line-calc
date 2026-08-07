@@ -5,6 +5,9 @@ from collections.abc import Callable
 from .calculator import Calculator
 from .exceptions import ConfigError, HistoryError, OperationError, ValidationError
 from .input_validators import validate_operands
+from .logger import get_logger
+
+logger = get_logger()
 
 QUIT_COMMANDS = {"exit", "quit", "q"}
 
@@ -47,6 +50,7 @@ def run_operation(calculator: Calculator, operation: str, args: list[str]) -> tu
         left, right = validate_operands(args)
         calculation = calculator.perform(operation, left, right)
     except (ValidationError, OperationError) as error:
+        logger.warning("Rejected '%s %s': %s", operation, " ".join(args), error)
         return (str(error),)
 
     return (f"Result: {calculator.format(calculation)}",)
@@ -77,6 +81,7 @@ def cmd_save(calculator: Calculator, args: list[str]) -> tuple[str, ...]:
     try:
         target = calculator.save(args[0] if args else None)
     except HistoryError as error:
+        logger.error("Save failed: %s", error)
         return (f"Could not save history: {error}",)
     return (f"History saved to {target}.",)
 
@@ -85,6 +90,7 @@ def cmd_load(calculator: Calculator, args: list[str]) -> tuple[str, ...]:
     try:
         target = calculator.load(args[0] if args else None)
     except HistoryError as error:
+        logger.error("Load failed: %s", error)
         return (f"Could not load history: {error}",)
     return (f"History loaded from {target}.",)
 
@@ -109,6 +115,7 @@ def run_repl(
         try:
             calculator = Calculator()
         except (ConfigError, HistoryError) as error:
+            logger.error("Startup failed: %s", error)
             output_func(f"Startup error: {error}")
             return 1
 
@@ -139,6 +146,7 @@ def run_repl(
         elif command in calculator.factory.available_operations():
             messages = run_operation(calculator, command, args)
         else:
+            logger.warning("Unknown command: %s", command)
             messages = (f"Unknown command: {command}. Type 'help' for options.",)
 
         for message in messages:

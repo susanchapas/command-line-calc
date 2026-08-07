@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from app.calculator import Calculator
@@ -314,3 +316,62 @@ def test_auto_persist_logs_instead_of_raising(tmp_path, caplog):
 
     assert "Auto-save failed" in caplog.text
     assert calculator.calculations() == ()
+
+
+def test_startup_logs_the_effective_configuration(config, caplog):
+    with caplog.at_level(logging.INFO, logger="calculator"):
+        Calculator(config=config, observers=[])
+
+    assert "Calculator ready: precision=10, max history=100, auto-save=False." in caplog.text
+
+
+def test_startup_logs_history_restored_from_disk(config, caplog):
+    seeded = Calculator(config=config, observers=[])
+    seeded.perform("add", 1, 2)
+    seeded.save()
+
+    with caplog.at_level(logging.INFO, logger="calculator"):
+        Calculator(config=config, observers=[])
+
+    assert f"Restored 1 calculations from {config.history_file}." in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("action", "expected"),
+    [
+        (lambda c: c.undo(), "Undid the last change; 0 calculations remain."),
+        (lambda c: c.clear(), "Clearing 1 calculations from the history."),
+        (lambda c: c.save(), "Saved 1 calculations to"),
+    ],
+)
+def test_history_changes_are_logged(calculator, caplog, action, expected):
+    calculator.perform("add", 1, 2)
+
+    with caplog.at_level(logging.INFO, logger="calculator"):
+        action(calculator)
+
+    assert expected in caplog.text
+
+
+def test_redo_and_load_are_logged(calculator, caplog):
+    calculator.perform("add", 1, 2)
+    calculator.save()
+    calculator.undo()
+
+    with caplog.at_level(logging.INFO, logger="calculator"):
+        calculator.redo()
+        calculator.load()
+
+    assert "Redid the last change; 1 calculations remain." in caplog.text
+    assert "Loaded 1 calculations from" in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("action", "expected"),
+    [(lambda c: c.undo(), "Nothing to undo."), (lambda c: c.redo(), "Nothing to redo.")],
+)
+def test_no_op_undo_redo_is_logged(calculator, caplog, action, expected):
+    with caplog.at_level(logging.INFO, logger="calculator"):
+        assert action(calculator) is False
+
+    assert expected in caplog.text

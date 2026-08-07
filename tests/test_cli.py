@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from app.calculator import Calculator
@@ -260,3 +262,48 @@ def test_autosave_failure_does_not_stop_the_repl(tmp_path):
 
     assert "Result: 2 + 3 = 5" in outputs
     assert outputs[-1] == "Goodbye!"
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("divide 1 0", "Rejected 'divide 1 0': Cannot divide by zero."),
+        ("add x y", "Rejected 'add x y': Enter two valid numbers."),
+        ("add 2", "Rejected 'add 2': Usage: <operation> <number> <number>."),
+        ("frobnicate", "Unknown command: frobnicate"),
+    ],
+)
+def test_rejected_input_is_logged_as_a_warning(calculator, caplog, command, expected):
+    with caplog.at_level(logging.WARNING, logger="calculator"):
+        drive(calculator, [command, "exit"])
+
+    assert expected in caplog.text
+    assert caplog.records[-1].levelno == logging.WARNING
+
+
+def test_save_failure_is_logged_as_an_error(calculator, tmp_path, caplog):
+    target = tmp_path / "missing" / "out.csv"
+
+    with caplog.at_level(logging.ERROR, logger="calculator"):
+        drive(calculator, [f"save {target}", "exit"])
+
+    assert "Save failed:" in caplog.text
+
+
+def test_load_failure_is_logged_as_an_error(calculator, tmp_path, caplog):
+    with caplog.at_level(logging.ERROR, logger="calculator"):
+        drive(calculator, [f"load {tmp_path / 'nope.csv'}", "exit"])
+
+    assert "Load failed: No history file at" in caplog.text
+
+
+def test_startup_failure_is_logged_as_an_error(monkeypatch, caplog):
+    def boom():
+        raise ConfigError("bad config")
+
+    monkeypatch.setattr("app.cli.Calculator", boom)
+
+    with caplog.at_level(logging.ERROR, logger="calculator"):
+        assert run_repl(lambda prompt: "exit", lambda line: None) == 1
+
+    assert "Startup failed: bad config" in caplog.text
