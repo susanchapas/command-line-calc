@@ -26,7 +26,7 @@ from app.strategies import (
         (RootStrategy, "root", "√", 16, 2, 4),
         (ModulusStrategy, "modulus", "%", 9, 4, 1),
         (IntDivideStrategy, "int_divide", "//", 9, 4, 2),
-        (PercentageStrategy, "percentage", "%of", 30, 150, 20),
+        (PercentageStrategy, "percent", "%of", 30, 150, 20),
         (AbsDiffStrategy, "abs_diff", "|Δ|", 4, 9, 5),
     ],
 )

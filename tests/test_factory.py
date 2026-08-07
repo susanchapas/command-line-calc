@@ -36,7 +36,7 @@ def test_available_operations():
         "root",
         "modulus",
         "int_divide",
-        "percentage",
+        "percent",
         "abs_diff",
     )
 
@@ -48,5 +48,5 @@ def test_symbol_lookup():
 def test_describe_operations():
     assert OperationFactory.describe_operations() == (
         "add (+), subtract (-), multiply (*), divide (/), power (^), root (√), "
-        "modulus (%), int_divide (//), percentage (%of), abs_diff (|Δ|)"
+        "modulus (%), int_divide (//), percent (%of), abs_diff (|Δ|)"
     )

@@ -44,7 +44,7 @@ Result: 2 + 3 = 5
 Result: 2 ^ 10 = 1024
 > root 27 3
 Result: 27 √ 3 = 3
-> percentage 25 200
+> percent 25 200
 Result: 25 %of 200 = 12.5
 ```
 
@@ -60,7 +60,7 @@ Result: 25 %of 200 = 12.5
 | `root` | `√` | the bth root of a |
 | `modulus` | `%` | the remainder of a divided by b |
 | `int_divide` | `//` | a divided by b, fractional part discarded |
-| `percentage` | `%of` | a as a percentage of b, `(a / b) * 100` |
+| `percent` | `%of` | a as a percentage of b, `(a / b) * 100` |
 | `abs_diff` | `\|Δ\|` | the absolute difference between a and b |
 
 ### Commands

@@ -87,7 +87,7 @@ class IntDivideStrategy(OperationStrategy):
 
 
 class PercentageStrategy(OperationStrategy):
-    name = "percentage"
+    name = "percent"
     symbol = "%of"
 
     def execute(self, left: float, right: float) -> float:

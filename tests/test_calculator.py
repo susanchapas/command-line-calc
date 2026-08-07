@@ -283,7 +283,7 @@ def test_perform_rejects_overflowing_results(calculator, operation, left, right)
 
 @pytest.mark.parametrize(
     ("operation", "left", "right"),
-    [("divide", 1e12, 1e-300), ("int_divide", 1e12, 1e-300), ("percentage", 1e12, 1e-300)],
+    [("divide", 1e12, 1e-300), ("int_divide", 1e12, 1e-300), ("percent", 1e12, 1e-300)],
 )
 def test_perform_rejects_non_finite_results(calculator, operation, left, right):
     with pytest.raises(OperationError, match="too large"):
