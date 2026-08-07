@@ -50,6 +50,15 @@ class Calculator:
     def _snapshot(self) -> HistoryMemento:
         return HistoryMemento(self.history.calculations())
 
+    def _auto_persist(self) -> None:
+        """Mirror in-memory history to disk when auto-save is enabled.
+
+        ``perform`` is covered by :class:`AutoSaveObserver`; the other
+        state-changing methods persist through here.
+        """
+        if self.config.auto_save:
+            self.save()
+
     def perform(self, operation: str, left: float, right: float) -> Calculation:
         strategy = self.factory.create(operation)
         result = strategy.execute(left, right)
@@ -70,6 +79,7 @@ class Calculator:
         if memento is None:
             return False
         self.history.restore(memento.state)
+        self._auto_persist()
         return True
 
     def redo(self) -> bool:
@@ -77,11 +87,13 @@ class Calculator:
         if memento is None:
             return False
         self.history.restore(memento.state)
+        self._auto_persist()
         return True
 
     def clear(self) -> None:
         self.caretaker.save_state(self._snapshot())
         self.history.clear()
+        self._auto_persist()
 
     def save(self, path: Path | str | None = None) -> Path:
         target = Path(path) if path is not None else Path(self.config.history_file)
@@ -93,4 +105,5 @@ class Calculator:
         snapshot = self._snapshot()
         self.history.load(target)
         self.caretaker.save_state(snapshot)
+        self._auto_persist()
         return target

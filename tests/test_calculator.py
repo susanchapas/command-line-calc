@@ -123,6 +123,78 @@ def test_default_observers_without_autosave(tmp_path):
     assert not config.history_file.exists()
 
 
+@pytest.fixture
+def autosave_config(tmp_path):
+    return CalculatorConfig(
+        history_file=tmp_path / "auto.csv",
+        auto_save=True,
+        max_history_size=100,
+    )
+
+
+def reloaded_count(config):
+    return len(Calculator(config=config, observers=[]).calculations())
+
+
+def test_undo_persists_when_autosaving(autosave_config):
+    calculator = Calculator(config=autosave_config)
+    calculator.perform("add", 1, 1)
+    calculator.perform("add", 2, 2)
+
+    calculator.undo()
+
+    assert reloaded_count(autosave_config) == 1
+
+
+def test_redo_persists_when_autosaving(autosave_config):
+    calculator = Calculator(config=autosave_config)
+    calculator.perform("add", 1, 1)
+    calculator.perform("add", 2, 2)
+    calculator.undo()
+
+    calculator.redo()
+
+    assert reloaded_count(autosave_config) == 2
+
+
+def test_clear_persists_when_autosaving(autosave_config):
+    calculator = Calculator(config=autosave_config)
+    calculator.perform("add", 1, 1)
+
+    calculator.clear()
+
+    assert reloaded_count(autosave_config) == 0
+
+
+def test_load_persists_when_autosaving(autosave_config, tmp_path):
+    calculator = Calculator(config=autosave_config)
+    calculator.perform("add", 4, 4)
+    external = tmp_path / "external.csv"
+    calculator.save(external)
+    calculator.clear()
+
+    calculator.load(external)
+
+    assert reloaded_count(autosave_config) == 1
+
+
+def test_failed_undo_does_not_persist(autosave_config):
+    calculator = Calculator(config=autosave_config, observers=[])
+
+    assert calculator.undo() is False
+    assert calculator.redo() is False
+    assert not autosave_config.history_file.exists()
+
+
+def test_undo_does_not_persist_without_autosave(config):
+    calculator = Calculator(config=config, observers=[])
+    calculator.perform("add", 1, 1)
+
+    calculator.undo()
+
+    assert not config.history_file.exists()
+
+
 def test_builds_config_from_env_when_omitted(tmp_path, monkeypatch):
     monkeypatch.setattr("app.calculator_config.load_dotenv", lambda: None)
     monkeypatch.setenv("CALCULATOR_HISTORY_FILE", str(tmp_path / "env.csv"))
