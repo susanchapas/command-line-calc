@@ -1,6 +1,17 @@
 import pytest
 
-from app.operations import add, divide, multiply, power, root, subtract
+from app.operations import (
+    abs_diff,
+    add,
+    divide,
+    int_divide,
+    modulus,
+    multiply,
+    percentage,
+    power,
+    root,
+    subtract,
+)
 
 
 @pytest.mark.parametrize(
@@ -18,6 +29,14 @@ from app.operations import add, divide, multiply, power, root, subtract
         (power, -2, 2, 4),
         (root, 9, 2, 3),
         (root, 27, 3, 3),
+        (modulus, 7, 3, 1),
+        (modulus, -7, 3, 2),
+        (int_divide, 7, 2, 3),
+        (int_divide, -7, 2, -4),
+        (percentage, 25, 200, 12.5),
+        (percentage, -5, 20, -25),
+        (abs_diff, 3, 10, 7),
+        (abs_diff, 10, 3, 7),
     ],
 )
 def test_operations(func, left, right, expected):
@@ -42,3 +61,18 @@ def test_root_rejects_zeroth_root():
 def test_root_rejects_negative_radicand():
     with pytest.raises(ValueError, match="negative number"):
         root(-8, 2)
+
+
+def test_modulus_rejects_zero_divisor():
+    with pytest.raises(ZeroDivisionError, match="modulus of zero"):
+        modulus(7, 0)
+
+
+def test_int_divide_rejects_zero_divisor():
+    with pytest.raises(ZeroDivisionError, match="Cannot divide by zero."):
+        int_divide(7, 0)
+
+
+def test_percentage_rejects_zero_whole():
+    with pytest.raises(ZeroDivisionError, match="percentage of zero"):
+        percentage(7, 0)

@@ -1,7 +1,7 @@
 import pytest
 
 from app.factory import OperationFactory
-from app.strategies import AddStrategy, RootStrategy
+from app.strategies import AbsDiffStrategy, AddStrategy, RootStrategy
 
 
 def test_create_returns_matching_strategy():
@@ -9,6 +9,7 @@ def test_create_returns_matching_strategy():
 
     assert isinstance(factory.create("add"), AddStrategy)
     assert isinstance(factory.create("root"), RootStrategy)
+    assert isinstance(factory.create("abs_diff"), AbsDiffStrategy)
 
 
 def test_create_normalizes_input():
@@ -21,7 +22,7 @@ def test_create_rejects_unknown_operation():
     factory = OperationFactory()
 
     with pytest.raises(ValueError, match="Choose one of"):
-        factory.create("modulo")
+        factory.create("logarithm")
 
 
 def test_available_operations():
@@ -32,6 +33,10 @@ def test_available_operations():
         "divide",
         "power",
         "root",
+        "modulus",
+        "int_divide",
+        "percentage",
+        "abs_diff",
     )
 
 
@@ -41,5 +46,6 @@ def test_symbol_lookup():
 
 def test_describe_operations():
     assert OperationFactory.describe_operations() == (
-        "add (+), subtract (-), multiply (*), divide (/), power (^), root (√)"
+        "add (+), subtract (-), multiply (*), divide (/), power (^), root (√), "
+        "modulus (%), int_divide (//), percentage (%of), abs_diff (|Δ|)"
     )

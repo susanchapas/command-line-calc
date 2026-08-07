@@ -68,3 +68,35 @@ class RootStrategy(OperationStrategy):
 
     def execute(self, left: float, right: float) -> float:
         return operations.root(left, right)
+
+
+class ModulusStrategy(OperationStrategy):
+    name = "modulus"
+    symbol = "%"
+
+    def execute(self, left: float, right: float) -> float:
+        return operations.modulus(left, right)
+
+
+class IntDivideStrategy(OperationStrategy):
+    name = "int_divide"
+    symbol = "//"
+
+    def execute(self, left: float, right: float) -> float:
+        return operations.int_divide(left, right)
+
+
+class PercentageStrategy(OperationStrategy):
+    name = "percentage"
+    symbol = "%of"
+
+    def execute(self, left: float, right: float) -> float:
+        return operations.percentage(left, right)
+
+
+class AbsDiffStrategy(OperationStrategy):
+    name = "abs_diff"
+    symbol = "|Δ|"
+
+    def execute(self, left: float, right: float) -> float:
+        return operations.abs_diff(left, right)

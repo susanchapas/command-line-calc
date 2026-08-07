@@ -3,10 +3,14 @@
 from typing import ClassVar
 
 from .strategies import (
+    AbsDiffStrategy,
     AddStrategy,
     DivideStrategy,
+    IntDivideStrategy,
+    ModulusStrategy,
     MultiplyStrategy,
     OperationStrategy,
+    PercentageStrategy,
     PowerStrategy,
     RootStrategy,
     SubtractStrategy,
@@ -23,6 +27,10 @@ class OperationFactory:
         DivideStrategy.name: DivideStrategy,
         PowerStrategy.name: PowerStrategy,
         RootStrategy.name: RootStrategy,
+        ModulusStrategy.name: ModulusStrategy,
+        IntDivideStrategy.name: IntDivideStrategy,
+        PercentageStrategy.name: PercentageStrategy,
+        AbsDiffStrategy.name: AbsDiffStrategy,
     }
 
     @classmethod

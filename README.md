@@ -1,9 +1,8 @@
 # Command-Line Calculator
 
 An enhanced REPL calculator built around classic design patterns. It supports
-addition, subtraction, multiplication, division, power, and root operations,
-keeps a `pandas`-backed history that auto-saves to CSV, and offers undo/redo
-plus a small set of built-in commands.
+ten two-operand arithmetic operations, keeps a `pandas`-backed history that
+auto-saves to CSV, and offers undo/redo plus a small set of built-in commands.
 
 ## Requirements
 
@@ -45,13 +44,30 @@ Result: 2 + 3 = 5
 Result: 2 ^ 10 = 1024
 > root 27 3
 Result: 27 √ 3 = 3
+> percentage 25 200
+Result: 25 %of 200 = 12.5
 ```
+
+### Operations
+
+| Operation | Symbol | Result of `<a> <b>` |
+| --- | --- | --- |
+| `add` | `+` | a plus b |
+| `subtract` | `-` | a minus b |
+| `multiply` | `*` | a times b |
+| `divide` | `/` | a divided by b |
+| `power` | `^` | a raised to the power of b |
+| `root` | `√` | the bth root of a |
+| `modulus` | `%` | the remainder of a divided by b |
+| `int_divide` | `//` | a divided by b, fractional part discarded |
+| `percentage` | `%of` | a as a percentage of b, `(a / b) * 100` |
+| `abs_diff` | `\|Δ\|` | the absolute difference between a and b |
 
 ### Commands
 
 | Command | Description |
 | --- | --- |
-| `<operation> <a> <b>` | run a calculation (`add`, `subtract`, `multiply`, `divide`, `power`, `root`) |
+| `<operation> <a> <b>` | run a calculation (see the operations table above) |
 | `history` | show the calculation history |
 | `undo` / `redo` | step backward or forward through history |
 | `save [path]` | save history to a CSV file |
