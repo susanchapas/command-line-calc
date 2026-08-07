@@ -1,4 +1,4 @@
-from calculator.calculation import Calculation
+from app.calculation import Calculation
 
 
 def test_render_formats_integers():

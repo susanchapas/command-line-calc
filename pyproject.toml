@@ -12,7 +12,7 @@ authors = [{ name = "susanchapas" }]
 dependencies = ["pandas>=2.2", "python-dotenv>=1.0"]
 
 [project.scripts]
-calculator = "calculator.main:main"
+calculator = "app.main:main"
 
 [project.optional-dependencies]
 test = ["pytest>=8.0", "pytest-cov>=6.0"]
@@ -23,10 +23,7 @@ addopts = "-q"
 
 [tool.coverage.run]
 branch = true
-source = ["calculator"]
+source = ["app"]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
+packages = ["app"]

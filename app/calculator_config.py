@@ -12,16 +12,14 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from .exceptions import ConfigError
+
 DEFAULT_HISTORY_FILE = "calculator_history.csv"
 DEFAULT_AUTO_SAVE = "true"
 DEFAULT_MAX_HISTORY = "100"
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _FALSE_VALUES = {"0", "false", "no", "off"}
-
-
-class ConfigError(Exception):
-    """Raised when an environment value cannot be parsed or is invalid."""
 
 
 def _parse_bool(raw_value: str) -> bool:

@@ -1,8 +1,8 @@
 import pytest
 
-from calculator.calculator import Calculator
-from calculator.config import CalculatorConfig
-from calculator.history import HistoryManager
+from app.calculator import Calculator
+from app.calculator_config import CalculatorConfig
+from app.history import HistoryManager
 
 
 def test_registers_supplied_observers(config):
@@ -124,7 +124,7 @@ def test_default_observers_without_autosave(tmp_path):
 
 
 def test_builds_config_from_env_when_omitted(tmp_path, monkeypatch):
-    monkeypatch.setattr("calculator.config.load_dotenv", lambda: None)
+    monkeypatch.setattr("app.calculator_config.load_dotenv", lambda: None)
     monkeypatch.setenv("CALCULATOR_HISTORY_FILE", str(tmp_path / "env.csv"))
     monkeypatch.setenv("CALCULATOR_AUTO_SAVE", "false")
     monkeypatch.setenv("CALCULATOR_MAX_HISTORY", "10")

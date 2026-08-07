@@ -3,8 +3,8 @@
 from collections.abc import Callable
 
 from .calculator import Calculator
-from .config import ConfigError
-from .history import HistoryError
+from .exceptions import ConfigError, HistoryError, ValidationError
+from .input_validators import validate_operands
 
 QUIT_COMMANDS = {"exit", "quit", "q"}
 
@@ -43,18 +43,10 @@ def format_history(calculator: Calculator) -> tuple[str, ...]:
 
 
 def run_operation(calculator: Calculator, operation: str, args: list[str]) -> tuple[str, ...]:
-    if len(args) != 2:
-        return ("Usage: <operation> <number> <number>.",)
-
     try:
-        left = float(args[0])
-        right = float(args[1])
-    except ValueError:
-        return ("Enter two valid numbers.",)
-
-    try:
+        left, right = validate_operands(args)
         calculation = calculator.perform(operation, left, right)
-    except (ZeroDivisionError, ValueError) as error:
+    except (ValidationError, ZeroDivisionError, ValueError) as error:
         return (str(error),)
 
     return (f"Result: {calculator.format(calculation)}",)

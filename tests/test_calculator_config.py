@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from calculator.config import CalculatorConfig, ConfigError
+from app.calculator_config import CalculatorConfig
+from app.exceptions import ConfigError
 
 
 def test_defaults_when_env_empty():
@@ -55,7 +56,7 @@ def test_non_positive_max_history_raises():
 def test_from_env_uses_process_environment(monkeypatch):
     for key in ("CALCULATOR_HISTORY_FILE", "CALCULATOR_AUTO_SAVE", "CALCULATOR_MAX_HISTORY"):
         monkeypatch.delenv(key, raising=False)
-    monkeypatch.setattr("calculator.config.load_dotenv", lambda: None)
+    monkeypatch.setattr("app.calculator_config.load_dotenv", lambda: None)
 
     config = CalculatorConfig.from_env()
 

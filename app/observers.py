@@ -10,8 +10,9 @@ from pathlib import Path
 
 from .calculation import Calculation
 from .history import HistoryManager
+from .logger import get_logger
 
-logger = logging.getLogger("calculator")
+logger = get_logger()
 
 
 class CalculationObserver(ABC):

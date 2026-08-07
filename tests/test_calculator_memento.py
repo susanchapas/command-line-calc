@@ -1,5 +1,5 @@
-from calculator.calculation import Calculation
-from calculator.memento import HistoryCaretaker, HistoryMemento
+from app.calculation import Calculation
+from app.calculator_memento import HistoryCaretaker, HistoryMemento
 
 
 def memento(*results):

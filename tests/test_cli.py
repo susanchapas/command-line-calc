@@ -1,8 +1,7 @@
 import pytest
 
-from calculator.config import ConfigError
-from calculator.history import HistoryError
-from calculator.cli import run_repl
+from app.cli import run_repl
+from app.exceptions import ConfigError, HistoryError
 
 
 def drive(calculator, commands):
@@ -184,7 +183,7 @@ def test_load_reports_history_error(calculator, tmp_path):
 
 
 def test_constructs_calculator_when_not_provided(monkeypatch, calculator):
-    monkeypatch.setattr("calculator.cli.Calculator", lambda: calculator)
+    monkeypatch.setattr("app.cli.Calculator", lambda: calculator)
 
     inputs = iter(["exit"])
     outputs = []
@@ -199,7 +198,7 @@ def test_reports_startup_error(monkeypatch, error):
     def boom():
         raise error
 
-    monkeypatch.setattr("calculator.cli.Calculator", boom)
+    monkeypatch.setattr("app.cli.Calculator", boom)
 
     outputs = []
     code = run_repl(lambda prompt: "exit", outputs.append)

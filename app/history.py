@@ -5,12 +5,9 @@ from pathlib import Path
 import pandas as pd
 
 from .calculation import Calculation
+from .exceptions import HistoryError
 
 COLUMNS = ("operation", "a", "b", "result")
-
-
-class HistoryError(Exception):
-    """Raised when a history file cannot be loaded."""
 
 
 class HistoryManager:

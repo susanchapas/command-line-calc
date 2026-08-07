@@ -1,7 +1,8 @@
 import pytest
 
-from calculator.calculation import Calculation
-from calculator.history import COLUMNS, HistoryError, HistoryManager
+from app.calculation import Calculation
+from app.exceptions import HistoryError
+from app.history import COLUMNS, HistoryManager
 
 
 def make_calc(operation="add", a=1, b=2, result=3):

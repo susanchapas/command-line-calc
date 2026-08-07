@@ -1,12 +1,11 @@
 """Entry point for the calculator application."""
 
-import logging
-
 from .cli import run_repl
+from .logger import configure_logging
 
 
 def main() -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s")
+    configure_logging()
     return run_repl()
 
 

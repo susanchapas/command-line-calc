@@ -1,7 +1,7 @@
 import pytest
 
-from calculator.calculator import Calculator
-from calculator.config import CalculatorConfig
+from app.calculator import Calculator
+from app.calculator_config import CalculatorConfig
 
 
 @pytest.fixture

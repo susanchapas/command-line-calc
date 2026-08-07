@@ -7,10 +7,10 @@ observers, and memento-based undo/redo behind a handful of methods.
 from pathlib import Path
 
 from .calculation import Calculation
-from .config import CalculatorConfig
+from .calculator_config import CalculatorConfig
+from .calculator_memento import HistoryCaretaker, HistoryMemento
 from .factory import OperationFactory
 from .history import HistoryManager
-from .memento import HistoryCaretaker, HistoryMemento
 from .observers import AutoSaveObserver, CalculationObserver, LoggingObserver
 
 

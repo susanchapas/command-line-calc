@@ -1,6 +1,6 @@
 import pytest
 
-from calculator.strategies import (
+from app.strategies import (
     AddStrategy,
     DivideStrategy,
     MultiplyStrategy,

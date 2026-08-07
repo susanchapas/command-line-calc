@@ -1,6 +1,6 @@
 import pytest
 
-from calculator.operations import add, divide, multiply, power, root, subtract
+from app.operations import add, divide, multiply, power, root, subtract
 
 
 @pytest.mark.parametrize(

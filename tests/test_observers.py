@@ -2,9 +2,9 @@ import logging
 
 import pytest
 
-from calculator.calculation import Calculation
-from calculator.history import HistoryManager
-from calculator.observers import AutoSaveObserver, CalculationObserver, LoggingObserver
+from app.calculation import Calculation
+from app.history import HistoryManager
+from app.observers import AutoSaveObserver, CalculationObserver, LoggingObserver
 
 
 def test_calculation_observer_is_abstract():

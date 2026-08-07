@@ -1,7 +1,7 @@
 import pytest
 
-from calculator.factory import OperationFactory
-from calculator.strategies import AddStrategy, RootStrategy
+from app.factory import OperationFactory
+from app.strategies import AddStrategy, RootStrategy
 
 
 def test_create_returns_matching_strategy():

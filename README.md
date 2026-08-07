@@ -18,24 +18,21 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install the project and test dependencies:
+Install the dependencies:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install -e '.[test]'
+python -m pip install -r requirements.txt
 ```
 
 ## Run the calculator
 
 ```bash
-calculator
+python -m app.main
 ```
 
-You can also run it directly:
-
-```bash
-python -m calculator.main
-```
+Installing the project (`python -m pip install -e .`) also provides a
+`calculator` command that does the same thing.
 
 ## Usage
 
@@ -77,6 +74,40 @@ Settings are read from the environment (and an optional `.env` file via
 Invalid values (e.g. a non-numeric `CALCULATOR_MAX_HISTORY`) are rejected at
 startup with a clear message.
 
+## Project structure
+
+```
+command-line-calculator/
+├── app/
+│   ├── __init__.py
+│   ├── calculation.py
+│   ├── calculator.py
+│   ├── calculator_config.py
+│   ├── calculator_memento.py
+│   ├── cli.py
+│   ├── exceptions.py
+│   ├── factory.py
+│   ├── history.py
+│   ├── input_validators.py
+│   ├── logger.py
+│   ├── main.py
+│   ├── observers.py
+│   ├── operations.py
+│   └── strategies.py
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   └── test_*.py
+├── .env
+├── .env.example
+├── requirements.txt
+├── pyproject.toml
+├── README.md
+└── .github/
+    └── workflows/
+        └── python-app.yml
+```
+
 ## Design
 
 The application is organized around the patterns the assignment calls for:
@@ -84,9 +115,14 @@ The application is organized around the patterns the assignment calls for:
 - **Strategy** (`strategies.py`) — interchangeable operation execution objects.
 - **Factory** (`factory.py`) — builds a strategy from an operation name.
 - **Observer** (`observers.py`) — logging and CSV auto-save react to each calculation.
-- **Memento** (`memento.py`) — snapshots power `undo`/`redo`.
+- **Memento** (`calculator_memento.py`) — snapshots power `undo`/`redo`.
 - **Facade** (`calculator.py`) — the `Calculator` class hides these subsystems
   and the `pandas` history behind a small interface used by the REPL.
+
+Supporting modules: `exceptions.py` holds the error hierarchy (every raised
+error derives from `CalculatorError`), `input_validators.py` parses REPL
+operands, `logger.py` centralizes logging setup, and `calculator_config.py`
+loads settings from the environment.
 
 Error handling uses both **LBYL** (validating configuration and checking for an
 existing history file before loading) and **EAFP** (executing operations and
@@ -98,10 +134,10 @@ Branch coverage is enabled in `pyproject.toml`, so this command enforces 100%
 of both lines and branches:
 
 ```bash
-python -m pytest --cov=calculator --cov-report=term-missing --cov-fail-under=100
+python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=100
 ```
 
 ### Coverage exceptions
 
 `# pragma: no cover` is used only for code that cannot be exercised by the test
-suite, such as the module entry-point guard in `src/calculator/main.py`.
+suite, such as the module entry-point guard in `app/main.py`.
