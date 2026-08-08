@@ -4,12 +4,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from .calculation import Calculation
+from .calculation import Calculation, parse_timestamp
 from .calculator_config import DEFAULT_ENCODING, DEFAULT_MAX_HISTORY_SIZE
 from .exceptions import HistoryError
 from .factory import OperationFactory
 
-COLUMNS = ("operation", "a", "b", "result")
+REQUIRED_COLUMNS = ("operation", "a", "b", "result")
+COLUMNS = (*REQUIRED_COLUMNS, "timestamp")
 NUMERIC_COLUMNS = ("a", "b", "result")
 
 
@@ -39,6 +40,9 @@ class HistoryManager:
                 "a": [c.a for c in calculations],
                 "b": [c.b for c in calculations],
                 "result": [c.result for c in calculations],
+                "timestamp": [
+                    "" if c.timestamp is None else c.timestamp.isoformat() for c in calculations
+                ],
             }
         )
 
@@ -56,7 +60,13 @@ class HistoryManager:
 
     def calculations(self) -> tuple[Calculation, ...]:
         return tuple(
-            Calculation(str(row.operation), float(row.a), float(row.b), float(row.result))
+            Calculation(
+                str(row.operation),
+                float(row.a),
+                float(row.b),
+                float(row.result),
+                parse_timestamp(str(row.timestamp)),
+            )
             for row in self._df.itertuples(index=False)
         )
 
@@ -108,9 +118,11 @@ class HistoryManager:
 
         :raises HistoryError: if a column is missing or holds unusable values.
         """
-        missing = [column for column in COLUMNS if column not in frame.columns]
+        missing = [column for column in REQUIRED_COLUMNS if column not in frame.columns]
         if missing:
             raise HistoryError(f"History file is missing columns: {', '.join(missing)}.")
+        if "timestamp" not in frame.columns:
+            frame = frame.assign(timestamp="")
 
         frame = frame[list(COLUMNS)].reset_index(drop=True)
         for column in NUMERIC_COLUMNS:
@@ -119,9 +131,26 @@ class HistoryManager:
                 raise HistoryError(f"History column {column!r} has non-numeric values.")
             frame[column] = values
 
+        frame["timestamp"] = HistoryManager._validated_timestamps(frame["timestamp"])
+
         unknown = sorted(
             set(frame["operation"].astype(str)) - set(OperationFactory.available_operations())
         )
         if unknown:
             raise HistoryError(f"History file has unknown operations: {', '.join(unknown)}.")
         return frame
+
+    @staticmethod
+    def _validated_timestamps(values: pd.Series) -> pd.Series:
+        """Return ``values`` as ISO 8601 strings, blank where a time is unknown.
+
+        A blank cell is accepted so history written before the column existed
+        still loads; anything else present must be a time that can be read back.
+
+        :raises HistoryError: if a value is not an ISO 8601 timestamp.
+        """
+        stamps = values.fillna("").astype(str).str.strip()
+        for value in stamps:
+            if value and parse_timestamp(value) is None:
+                raise HistoryError(f"History file has an invalid timestamp: {value!r}.")
+        return stamps

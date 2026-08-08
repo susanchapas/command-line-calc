@@ -3,36 +3,18 @@
 from typing import ClassVar
 
 from .exceptions import OperationError
-from .strategies import (
-    AbsDiffStrategy,
-    AddStrategy,
-    DivideStrategy,
-    IntDivideStrategy,
-    ModulusStrategy,
-    MultiplyStrategy,
-    OperationStrategy,
-    PercentageStrategy,
-    PowerStrategy,
-    RootStrategy,
-    SubtractStrategy,
-)
+from .strategies import OPERATIONS, OperationStrategy
 
 
 class OperationFactory:
-    """Create :class:`OperationStrategy` instances keyed by operation name."""
+    """Create :class:`OperationStrategy` instances keyed by operation name.
 
-    _registry: ClassVar[dict[str, type[OperationStrategy]]] = {
-        AddStrategy.name: AddStrategy,
-        SubtractStrategy.name: SubtractStrategy,
-        MultiplyStrategy.name: MultiplyStrategy,
-        DivideStrategy.name: DivideStrategy,
-        PowerStrategy.name: PowerStrategy,
-        RootStrategy.name: RootStrategy,
-        ModulusStrategy.name: ModulusStrategy,
-        IntDivideStrategy.name: IntDivideStrategy,
-        PercentageStrategy.name: PercentageStrategy,
-        AbsDiffStrategy.name: AbsDiffStrategy,
-    }
+    The registry is the one populated by the :func:`~app.strategies.register`
+    decorator, so a newly decorated strategy is buildable without any change
+    here.
+    """
+
+    _registry: ClassVar[dict[str, type[OperationStrategy]]] = OPERATIONS
 
     @classmethod
     def available_operations(cls) -> tuple[str, ...]:
@@ -41,12 +23,6 @@ class OperationFactory:
     @classmethod
     def symbol(cls, operation_name: str) -> str:
         return cls._registry[operation_name].symbol
-
-    @classmethod
-    def describe_operations(cls) -> str:
-        return ", ".join(
-            f"{name} ({strategy.symbol})" for name, strategy in cls._registry.items()
-        )
 
     def create(self, operation_name: str) -> OperationStrategy:
         """Return a strategy instance for ``operation_name``.

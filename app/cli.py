@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from .calculator import Calculator
 from .exceptions import ConfigError, HistoryError, OperationError, ValidationError
+from .help_menu import build_help_menu
 from .input_validators import validate_operands
 from .logger import get_logger
 
@@ -16,21 +17,6 @@ def banner() -> tuple[str, ...]:
     return (
         "Command-line Calculator",
         "Type an operation like 'add 2 3', or 'help' for all commands.",
-    )
-
-
-def format_help(calculator: Calculator) -> tuple[str, ...]:
-    return (
-        "Commands:",
-        "  <operation> <a> <b>   run a calculation (e.g. add 2 3)",
-        "  history               show the calculation history",
-        "  undo / redo           step backward or forward through history",
-        "  save [path]           save history to a CSV file",
-        "  load [path]           load history from a CSV file",
-        "  clear                 erase the current history",
-        "  help                  show this message",
-        "  exit                  quit the calculator",
-        f"Operations: {calculator.factory.describe_operations()}.",
     )
 
 
@@ -57,7 +43,7 @@ def run_operation(calculator: Calculator, operation: str, args: list[str]) -> tu
 
 
 def cmd_help(calculator: Calculator, args: list[str]) -> tuple[str, ...]:
-    return format_help(calculator)
+    return build_help_menu().render()
 
 
 def cmd_history(calculator: Calculator, args: list[str]) -> tuple[str, ...]:

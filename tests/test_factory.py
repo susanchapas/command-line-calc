@@ -45,8 +45,13 @@ def test_symbol_lookup():
     assert OperationFactory.symbol("multiply") == "*"
 
 
-def test_describe_operations():
-    assert OperationFactory.describe_operations() == (
-        "add (+), subtract (-), multiply (*), divide (/), power (^), root (√), "
-        "modulus (%), int_divide (//), percent (%of), abs_diff (|Δ|)"
-    )
+def test_register_makes_the_operation_available(extra_operation):
+    factory = OperationFactory()
+
+    assert "triple_sum" in factory.available_operations()
+    assert isinstance(factory.create("triple_sum"), extra_operation)
+    assert factory.symbol("triple_sum") == "+++"
+
+
+def test_unregistering_removes_the_operation():
+    assert "triple_sum" not in OperationFactory.available_operations()

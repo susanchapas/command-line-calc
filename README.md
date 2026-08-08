@@ -63,6 +63,28 @@ Result: 25 %of 200 = 12.5
 | `percent` | `%of` | a as a percentage of b, `(a / b) * 100` |
 | `abs_diff` | `\|Δ\|` | the absolute difference between a and b |
 
+#### Adding an operation
+
+Operations are self-registering. Define a strategy in `app/strategies.py` and
+decorate it with `@register`:
+
+```python
+@register
+class LogarithmStrategy(OperationStrategy):
+    name = "logarithm"
+    symbol = "log"
+    description = "the log of a in base b"
+
+    def execute(self, left: float, right: float) -> float:
+        return math.log(left, right)
+```
+
+That is the only edit. `@register` puts the class in the registry the factory
+builds from, so `logarithm 8 2` works at the prompt; `build_help_menu` then
+wraps the menu in one more decorator for it, so `help` lists the operation with
+its symbol and description. No change to `factory.py`, `cli.py`, or
+`help_menu.py`, and no hand-maintained menu to keep in sync.
+
 ### Commands
 
 | Command | Description |
@@ -73,8 +95,35 @@ Result: 25 %of 200 = 12.5
 | `save [path]` | save history to a CSV file |
 | `load [path]` | load history from a CSV file |
 | `clear` | erase the current history |
-| `help` | list commands and operations |
+| `help` | list commands, and every registered operation with its description |
 | `exit` | quit (`quit` and `q` also work) |
+
+## History file
+
+History is serialized with `pandas` to the CSV at
+`CALCULATOR_HISTORY_DIR/CALCULATOR_HISTORY_FILE`, written on `save`, on every
+calculation when `CALCULATOR_AUTO_SAVE` is on, and read back by `load` and at
+startup. Each row is one calculation:
+
+| Column | Meaning |
+| --- | --- |
+| `operation` | operation name, e.g. `add` |
+| `a`, `b` | the two operands |
+| `result` | the result, rounded to `CALCULATOR_PRECISION` |
+| `timestamp` | when the calculation ran, ISO 8601 with UTC offset |
+
+```csv
+operation,a,b,result,timestamp
+add,2.0,3.0,5.0,2026-08-07T21:20:21.101554-04:00
+power,2.0,10.0,1024.0,2026-08-07T21:20:21.102902-04:00
+```
+
+A missing file, an unreadable one, or malformed contents — a missing column, a
+non-numeric operand, an unknown operation, an unparseable timestamp — is
+reported as a `HistoryError` with a message naming the problem, leaving the
+in-memory history untouched. The `timestamp` column is the one exception: it may
+be absent or blank, so history written before the column existed still loads,
+with those calculations carrying no time.
 
 ## Configuration
 
@@ -161,6 +210,7 @@ command-line-calculator/
 │   ├── cli.py
 │   ├── exceptions.py
 │   ├── factory.py
+│   ├── help_menu.py
 │   ├── history.py
 │   ├── input_validators.py
 │   ├── logger.py
@@ -188,6 +238,10 @@ The application is organized around the patterns the assignment calls for:
 
 - **Strategy** (`strategies.py`) — interchangeable operation execution objects.
 - **Factory** (`factory.py`) — builds a strategy from an operation name.
+- **Decorator** (`help_menu.py`) — the `help` menu is a `HelpComponent`
+  (`CommandHelp`) wrapped by `HelpDecorator` subclasses. `build_help_menu`
+  stacks one `OperationHelp` decorator per registered operation, so the menu
+  is assembled from the registry rather than written out by hand.
 - **Observer** (`observers.py`) — logging and CSV auto-save react to each calculation.
 - **Memento** (`calculator_memento.py`) — snapshots power `undo`/`redo`.
 - **Facade** (`calculator.py`) — the `Calculator` class hides these subsystems
@@ -216,3 +270,13 @@ python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=100
 
 `# pragma: no cover` is used only for code that cannot be exercised by the test
 suite, such as the module entry-point guard in `app/main.py`.
+
+## Continuous Integration
+
+`.github/workflows/python-app.yml` runs the suite on every push and pull
+request targeting `main`/`master`. The job checks out the repository, sets up
+Python, installs `requirements.txt`, and runs `pytest` under `pytest-cov` with
+`--cov-fail-under=90`, so the build fails if coverage drops below 90%. The
+suite needs no `.env`: `CalculatorConfig` falls back to built-in defaults, and
+tests write to `tmp_path` rather than the configured log and history
+directories.

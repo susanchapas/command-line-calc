@@ -1,6 +1,8 @@
+from datetime import datetime
+
 import pytest
 
-from app.calculation import Calculation
+from app.calculation import Calculation, now
 from app.exceptions import HistoryError
 from app.history import COLUMNS, HistoryManager
 
@@ -199,6 +201,77 @@ def test_load_rejects_unknown_operations(tmp_path):
     history = HistoryManager()
     with pytest.raises(HistoryError, match="unknown operations: logarithm"):
         history.load(path)
+
+
+def test_saved_csv_records_the_timestamp(tmp_path):
+    path = tmp_path / "history.csv"
+    stamp = datetime(2026, 8, 7, 12, 30, 15)
+    history = HistoryManager()
+    history.add(Calculation("add", 2.0, 3.0, 5.0, stamp))
+
+    history.save(path)
+
+    header, row = path.read_text().splitlines()
+    assert header == "operation,a,b,result,timestamp"
+    assert row == "add,2.0,3.0,5.0,2026-08-07T12:30:15"
+
+
+def test_timestamps_survive_a_round_trip(tmp_path):
+    path = tmp_path / "history.csv"
+    stamp = now()
+    history = HistoryManager()
+    history.add(Calculation("add", 2, 3, 5, stamp))
+    history.save(path)
+
+    reloaded = HistoryManager()
+    reloaded.load(path)
+
+    assert reloaded.calculations()[0].timestamp == stamp
+
+
+def test_load_accepts_history_written_without_a_timestamp_column(tmp_path):
+    path = tmp_path / "legacy.csv"
+    path.write_text("operation,a,b,result\nadd,2,3,5\n")
+
+    history = HistoryManager()
+    history.load(path)
+
+    calculation = history.calculations()[0]
+    assert calculation == Calculation("add", 2.0, 3.0, 5.0)
+    assert calculation.timestamp is None
+
+
+def test_load_accepts_a_blank_timestamp_cell(tmp_path):
+    path = tmp_path / "blank.csv"
+    path.write_text("operation,a,b,result,timestamp\nadd,2,3,5,\n")
+
+    history = HistoryManager()
+    history.load(path)
+
+    assert history.calculations()[0].timestamp is None
+
+
+def test_load_rejects_an_invalid_timestamp(tmp_path):
+    path = tmp_path / "bad_time.csv"
+    path.write_text("operation,a,b,result,timestamp\nadd,2,3,5,yesterday\n")
+
+    history = HistoryManager()
+    with pytest.raises(HistoryError, match="invalid timestamp: 'yesterday'"):
+        history.load(path)
+
+
+def test_history_without_timestamps_can_be_saved_again(tmp_path):
+    source = tmp_path / "legacy.csv"
+    source.write_text("operation,a,b,result\nadd,2,3,5\n")
+    history = HistoryManager()
+    history.load(source)
+
+    target = tmp_path / "resaved.csv"
+    history.save(target)
+
+    reloaded = HistoryManager()
+    reloaded.load(target)
+    assert reloaded.calculations()[0].timestamp is None
 
 
 def test_save_reports_unwritable_path(tmp_path):
