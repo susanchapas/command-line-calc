@@ -20,6 +20,23 @@ def test_rejects_non_numeric_operands(args):
         validate_operands(args)
 
 
+@pytest.mark.parametrize(
+    ("token", "expected"),
+    [("1e3", 1000.0), ("-2.5e-2", -0.025), ("  4  ", 4.0), ("+7", 7.0), (".5", 0.5)],
+)
+def test_parses_accepted_numeric_formats(token, expected):
+    assert validate_operands([token, "1"])[0] == expected
+
+
+@pytest.mark.parametrize("token", ["inf", "-inf", "nan"])
+def test_non_finite_tokens_parse_but_fail_the_range_check(token):
+    """``float`` accepts these spellings, so the range check is what rejects them."""
+    value, _ = validate_operands([token, "1"])
+
+    with pytest.raises(ValidationError, match="finite"):
+        validate_range(value, 10.0)
+
+
 @pytest.mark.parametrize("value", [0.0, 5.0, -5.0, 10.0, -10.0])
 def test_range_accepts_values_within_the_limit(value):
     assert validate_range(value, 10.0) == value

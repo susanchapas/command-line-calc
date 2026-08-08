@@ -51,6 +51,56 @@ def test_undo_redo_when_nothing_to_do(calculator):
     assert calculator.redo() is False
 
 
+def test_repeated_undo_walks_back_to_an_empty_history(calculator):
+    calculator.perform("add", 1, 1)
+    calculator.perform("add", 2, 2)
+
+    assert calculator.undo() is True
+    assert calculator.undo() is True
+    assert calculator.calculations() == ()
+    assert calculator.undo() is False
+
+
+def test_new_calculation_discards_the_redo_stack(calculator):
+    calculator.perform("add", 1, 1)
+    calculator.perform("add", 2, 2)
+    calculator.undo()
+
+    calculator.perform("add", 3, 3)
+
+    assert calculator.redo() is False
+    assert [c.result for c in calculator.calculations()] == [2, 6]
+
+
+def test_history_is_capped_at_the_configured_size(tmp_path):
+    config = CalculatorConfig(log_dir=tmp_path, history_dir=tmp_path, max_history_size=2)
+    calculator = Calculator(config=config, observers=[])
+
+    for value in (1, 2, 3):
+        calculator.perform("add", value, value)
+
+    assert [c.result for c in calculator.calculations()] == [4, 6]
+
+
+@pytest.mark.parametrize(
+    ("operation", "expected"),
+    [
+        ("add", "7 + 2 = 9"),
+        ("subtract", "7 - 2 = 5"),
+        ("multiply", "7 * 2 = 14"),
+        ("divide", "7 / 2 = 3.5"),
+        ("power", "7 ^ 2 = 49"),
+        ("root", "7 √ 2 = 2.64575"),
+        ("modulus", "7 % 2 = 1"),
+        ("int_divide", "7 // 2 = 3"),
+        ("percent", "7 %of 2 = 350"),
+        ("abs_diff", "7 |Δ| 2 = 5"),
+    ],
+)
+def test_format_renders_each_operation_symbol(calculator, operation, expected):
+    assert calculator.format(calculator.perform(operation, 7, 2)) == expected
+
+
 def test_clear_is_undoable(calculator):
     calculator.perform("add", 1, 1)
 

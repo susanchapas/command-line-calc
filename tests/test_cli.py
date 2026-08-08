@@ -64,6 +64,41 @@ def test_operation_is_case_insensitive(calculator):
     assert "Result: 2 + 3 = 5" in outputs
 
 
+@pytest.mark.parametrize("command", ["HELP", "History", "UNDO", "Clear"])
+def test_commands_are_case_insensitive(calculator, command):
+    _, outputs = drive(calculator, [command, "exit"])
+
+    assert not any(line.startswith("Unknown command") for line in outputs)
+
+
+def test_extra_whitespace_between_tokens_is_ignored(calculator):
+    _, outputs = drive(calculator, ["   add    2     3   ", "exit"])
+
+    assert "Result: 2 + 3 = 5" in outputs
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("add -2 -3", "Result: -2 + -3 = -5"),
+        ("multiply 1e3 2", "Result: 1000 * 2 = 2000"),
+        ("divide 5 2", "Result: 5 / 2 = 2.5"),
+        ("power 2 -2", "Result: 2 ^ -2 = 0.25"),
+    ],
+)
+def test_accepts_negative_and_scientific_operands(calculator, command, expected):
+    _, outputs = drive(calculator, [command, "exit"])
+
+    assert expected in outputs
+
+
+@pytest.mark.parametrize("command", ["add inf 1", "add 1 nan"])
+def test_operation_rejects_non_finite_operands(calculator, command):
+    _, outputs = drive(calculator, [command, "exit"])
+
+    assert any("finite" in line for line in outputs)
+
+
 def test_operation_wrong_argument_count(calculator):
     _, outputs = drive(calculator, ["add 2", "exit"])
 

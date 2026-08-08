@@ -45,6 +45,38 @@ def test_operations(func, left, right, expected):
 
 
 @pytest.mark.parametrize(
+    ("func", "left", "right", "expected"),
+    [
+        (power, 2, -2, 0.25),
+        (power, -2, -3, -0.125),
+        (power, 5, 0, 1),
+        (power, 0, 5, 0),
+        (power, 4, 0.5, 2),
+        (root, 8, -3, 0.5),
+        (root, 0, 2, 0),
+        (root, 5, 1, 5),
+        (modulus, 7, -3, -2),
+        (modulus, 7.5, 2, 1.5),
+        (int_divide, 7, -2, -4),
+        (int_divide, -7, -2, 3),
+        (percentage, 0, 5, 0),
+        (percentage, 50, 50, 100),
+        (abs_diff, -3, -10, 7),
+        (abs_diff, 4, 4, 0),
+        (divide, 1, 4, 0.25),
+        (subtract, 5, 5, 0),
+    ],
+)
+def test_operation_edge_cases(func, left, right, expected):
+    assert func(left, right) == pytest.approx(expected)
+
+
+def test_results_are_not_rounded():
+    """Rounding belongs to the calculator, which applies the configured precision."""
+    assert add(0.1, 0.2) == 0.30000000000000004
+
+
+@pytest.mark.parametrize(
     ("func", "left", "right", "message"),
     [
         (divide, 1, 0, "Cannot divide by zero."),

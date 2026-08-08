@@ -41,6 +41,20 @@ def test_to_dataframe_columns_and_values():
     assert frame.iloc[0]["result"] == 5.0
 
 
+def test_empty_to_dataframe_still_has_the_columns():
+    assert list(HistoryManager().to_dataframe().columns) == list(COLUMNS)
+
+
+def test_to_dataframe_returns_a_copy():
+    history = HistoryManager()
+    history.add(make_calc("add", 2, 3, 5))
+
+    frame = history.to_dataframe()
+    frame.loc[0, "result"] = 999
+
+    assert history.calculations() == (Calculation("add", 2.0, 3.0, 5.0),)
+
+
 def test_clear_empties_history():
     history = HistoryManager()
     history.add(make_calc())
@@ -83,6 +97,16 @@ def test_save_and_load_round_trip(tmp_path):
     reloaded.load(path)
 
     assert reloaded.calculations() == history.calculations()
+
+
+def test_empty_history_round_trip(tmp_path):
+    path = tmp_path / "empty.csv"
+    HistoryManager().save(path)
+
+    reloaded = HistoryManager()
+    reloaded.load(path)
+
+    assert reloaded.is_empty()
 
 
 def test_load_rejects_missing_columns(tmp_path):
