@@ -142,17 +142,18 @@ def reloaded_count(config):
     return len(Calculator(config=config, observers=[]).calculations())
 
 
-def test_undo_persists_when_autosaving(autosave_config):
+def test_undo_leaves_the_history_file_alone(autosave_config):
     calculator = Calculator(config=autosave_config)
     calculator.perform("add", 1, 1)
     calculator.perform("add", 2, 2)
 
     calculator.undo()
 
-    assert reloaded_count(autosave_config) == 1
+    assert len(calculator.calculations()) == 1
+    assert reloaded_count(autosave_config) == 2
 
 
-def test_redo_persists_when_autosaving(autosave_config):
+def test_redo_leaves_the_history_file_alone(autosave_config):
     calculator = Calculator(config=autosave_config)
     calculator.perform("add", 1, 1)
     calculator.perform("add", 2, 2)
@@ -160,16 +161,29 @@ def test_redo_persists_when_autosaving(autosave_config):
 
     calculator.redo()
 
+    assert len(calculator.calculations()) == 2
     assert reloaded_count(autosave_config) == 2
 
 
-def test_clear_persists_when_autosaving(autosave_config):
+def test_clear_leaves_the_history_file_alone(autosave_config):
     calculator = Calculator(config=autosave_config)
     calculator.perform("add", 1, 1)
 
     calculator.clear()
 
-    assert reloaded_count(autosave_config) == 0
+    assert calculator.calculations() == ()
+    assert reloaded_count(autosave_config) == 1
+
+
+def test_clear_does_not_destroy_an_explicit_save(autosave_config):
+    calculator = Calculator(config=autosave_config)
+    calculator.perform("add", 2, 3)
+    calculator.save()
+
+    calculator.clear()
+    calculator.load()
+
+    assert len(calculator.calculations()) == 1
 
 
 def test_load_persists_when_autosaving(autosave_config, tmp_path):
@@ -306,16 +320,18 @@ def test_auto_persist_logs_instead_of_raising(tmp_path, caplog):
     )
     calculator = Calculator(config=config, observers=[])
     calculator.perform("add", 1, 2)
+    external = tmp_path / "external.csv"
+    calculator.save(external)
     config.history_dir.chmod(0o500)
 
     try:
         with caplog.at_level("ERROR"):
-            calculator.clear()
+            calculator.load(external)
     finally:
         config.history_dir.chmod(0o700)
 
     assert "Auto-save failed" in caplog.text
-    assert calculator.calculations() == ()
+    assert len(calculator.calculations()) == 1
 
 
 def test_startup_logs_the_effective_configuration(config, caplog):

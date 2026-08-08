@@ -77,10 +77,12 @@ class Calculator:
     def _auto_persist(self) -> None:
         """Mirror in-memory history to disk when auto-save is enabled.
 
-        ``perform`` is covered by :class:`AutoSaveObserver`; the other
-        state-changing methods persist through here. A failed auto-save is
-        logged rather than raised, because the in-memory history is still
-        correct and an explicit ``save`` reports the problem directly.
+        ``perform`` is covered by :class:`AutoSaveObserver`; ``load`` persists
+        through here so a restored history survives a restart. ``undo``,
+        ``redo``, and ``clear`` deliberately do not, so that an explicit
+        ``save`` stays recoverable by ``load``. A failed auto-save is logged
+        rather than raised, because the in-memory history is still correct and
+        an explicit ``save`` reports the problem directly.
         """
         if not self.config.auto_save:
             return
@@ -127,7 +129,6 @@ class Calculator:
             return False
         self.history.restore(memento.state)
         logger.info("Undid the last change; %d calculations remain.", len(self.history))
-        self._auto_persist()
         return True
 
     def redo(self) -> bool:
@@ -137,14 +138,12 @@ class Calculator:
             return False
         self.history.restore(memento.state)
         logger.info("Redid the last change; %d calculations remain.", len(self.history))
-        self._auto_persist()
         return True
 
     def clear(self) -> None:
         logger.info("Clearing %d calculations from the history.", len(self.history))
         self.caretaker.save_state(self._snapshot())
         self.history.clear()
-        self._auto_persist()
 
     def save(self, path: Path | str | None = None) -> Path:
         target = Path(path) if path is not None else Path(self.config.history_file)
