@@ -6,13 +6,13 @@ and delegating to it. Each concrete decorator renders the component it wraps
 and adds its own lines to the result.
 
 :func:`build_help_menu` stacks one :class:`OperationHelp` decorator per
-registered operation, so the menu gains a line whenever a strategy is
+registered operation, so the menu gains a line whenever an operation is
 registered. Nothing in this module names an individual operation.
 """
 
 from abc import ABC, abstractmethod
 
-from .strategies import OPERATIONS, OperationStrategy
+from .operations import OPERATIONS, Operation
 
 COMMAND_LINES = (
     "Commands:",
@@ -73,26 +73,26 @@ class OperationHelp(HelpDecorator):
     def __init__(
         self,
         component: HelpComponent,
-        strategy: type[OperationStrategy],
+        operation: type[Operation],
         name_width: int,
         symbol_width: int,
     ) -> None:
         super().__init__(component)
-        self._strategy = strategy
+        self._operation = operation
         self._name_width = name_width
         self._symbol_width = symbol_width
 
     def render(self) -> tuple[str, ...]:
-        strategy = self._strategy
+        operation = self._operation
         line = (
-            f"  {strategy.name:<{self._name_width}}  "
-            f"{strategy.symbol:<{self._symbol_width}}  {strategy.description}"
+            f"  {operation.name:<{self._name_width}}  "
+            f"{operation.symbol:<{self._symbol_width}}  {operation.description}"
         )
         return (*self.component.render(), line)
 
 
 def build_help_menu(
-    operations: dict[str, type[OperationStrategy]] | None = None,
+    operations: dict[str, type[Operation]] | None = None,
 ) -> HelpComponent:
     """Return the command list wrapped in one decorator per registered operation.
 
@@ -101,9 +101,9 @@ def build_help_menu(
     """
     registry = OPERATIONS if operations is None else operations
     name_width = max(len(name) for name in registry)
-    symbol_width = max(len(strategy.symbol) for strategy in registry.values())
+    symbol_width = max(len(operation.symbol) for operation in registry.values())
 
     menu: HelpComponent = SectionHeading(CommandHelp(), "Operations:")
-    for strategy in registry.values():
-        menu = OperationHelp(menu, strategy, name_width, symbol_width)
+    for operation in registry.values():
+        menu = OperationHelp(menu, operation, name_width, symbol_width)
     return menu

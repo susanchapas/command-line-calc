@@ -2,21 +2,21 @@ import pytest
 
 from app.exceptions import OperationError
 from app.factory import OperationFactory
-from app.strategies import AbsDiffStrategy, AddStrategy, RootStrategy
+from app.operations import AbsDiff, Add, Root
 
 
-def test_create_returns_matching_strategy():
+def test_create_returns_matching_operation():
     factory = OperationFactory()
 
-    assert isinstance(factory.create("add"), AddStrategy)
-    assert isinstance(factory.create("root"), RootStrategy)
-    assert isinstance(factory.create("abs_diff"), AbsDiffStrategy)
+    assert isinstance(factory.create("add"), Add)
+    assert isinstance(factory.create("root"), Root)
+    assert isinstance(factory.create("abs_diff"), AbsDiff)
 
 
 def test_create_normalizes_input():
     factory = OperationFactory()
 
-    assert isinstance(factory.create("  ADD  "), AddStrategy)
+    assert isinstance(factory.create("  ADD  "), Add)
 
 
 def test_create_rejects_unknown_operation():

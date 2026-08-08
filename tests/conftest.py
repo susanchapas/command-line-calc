@@ -2,7 +2,7 @@ import pytest
 
 from app.calculator import Calculator
 from app.calculator_config import CalculatorConfig
-from app.strategies import OPERATIONS, OperationStrategy, register
+from app.operations import OPERATIONS, Operation, register
 
 
 @pytest.fixture
@@ -10,7 +10,7 @@ def extra_operation():
     """Register an operation for one test, then unregister it."""
 
     @register
-    class TripleSumStrategy(OperationStrategy):
+    class TripleSum(Operation):
         name = "triple_sum"
         symbol = "+++"
         description = "a plus b, tripled"
@@ -18,8 +18,8 @@ def extra_operation():
         def execute(self, left, right):
             return (left + right) * 3
 
-    yield TripleSumStrategy
-    del OPERATIONS[TripleSumStrategy.name]
+    yield TripleSum
+    del OPERATIONS[TripleSum.name]
 
 
 @pytest.fixture

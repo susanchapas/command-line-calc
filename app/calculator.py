@@ -1,7 +1,7 @@
-"""Facade pattern: a single simple interface over the calculator subsystems.
+"""A single simple interface over the calculator subsystems.
 
-``Calculator`` hides the factory, strategies, pandas-backed history,
-observers, and memento-based undo/redo behind a handful of methods.
+``Calculator`` hides the operation factory, pandas-backed history, observers,
+and memento-based undo/redo behind a handful of methods.
 """
 
 import math
@@ -16,7 +16,7 @@ from .history import HistoryManager
 from .input_validators import validate_range
 from .logger import get_logger
 from .observers import AutoSaveObserver, CalculationObserver, LoggingObserver
-from .strategies import OperationStrategy
+from .operations import Operation
 
 logger = get_logger()
 
@@ -102,13 +102,13 @@ class Calculator:
             logger.error("Auto-save failed: %s", error)
 
     @staticmethod
-    def _execute(strategy: OperationStrategy, left: float, right: float) -> float:
-        """Return the strategy's result, rejecting values floats cannot hold.
+    def _execute(operation: Operation, left: float, right: float) -> float:
+        """Return the operation's result, rejecting values floats cannot hold.
 
         :raises OperationError: if the result overflows or is not finite.
         """
         try:
-            result = strategy.execute(left, right)
+            result = operation.execute(left, right)
         except OverflowError as exc:
             raise OperationError(RESULT_TOO_LARGE) from exc
         if not math.isfinite(result):
@@ -116,11 +116,11 @@ class Calculator:
         return result
 
     def perform(self, operation: str, left: float, right: float) -> Calculation:
-        strategy = self.factory.create(operation)
+        operation_impl = self.factory.create(operation)
         validate_range(left, self.config.max_input_value)
         validate_range(right, self.config.max_input_value)
-        result = round(self._execute(strategy, left, right), self.config.precision)
-        calculation = Calculation(strategy.name, left, right, result)
+        result = round(self._execute(operation_impl, left, right), self.config.precision)
+        calculation = Calculation(operation_impl.name, left, right, result)
         self.caretaker.save_state(self._snapshot())
         self.history.add(calculation)
         self._notify(calculation)

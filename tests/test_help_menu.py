@@ -9,7 +9,7 @@ from app.help_menu import (
     SectionHeading,
     build_help_menu,
 )
-from app.strategies import OPERATIONS
+from app.operations import OPERATIONS
 
 
 def operation_lines(menu):
@@ -58,18 +58,18 @@ def test_menu_has_one_line_per_registered_operation():
     lines = operation_lines(build_help_menu())
 
     assert len(lines) == len(OPERATIONS)
-    for line, strategy in zip(lines, OPERATIONS.values(), strict=True):
-        assert line.startswith(f"  {strategy.name} ")
-        assert strategy.symbol in line
-        assert line.endswith(strategy.description)
+    for line, operation in zip(lines, OPERATIONS.values(), strict=True):
+        assert line.startswith(f"  {operation.name} ")
+        assert operation.symbol in line
+        assert line.endswith(operation.description)
 
 
 def test_menu_aligns_every_description_in_the_same_column():
     lines = operation_lines(build_help_menu())
 
     columns = {
-        len(line) - len(strategy.description)
-        for line, strategy in zip(lines, OPERATIONS.values(), strict=True)
+        len(line) - len(operation.description)
+        for line, operation in zip(lines, OPERATIONS.values(), strict=True)
     }
 
     assert len(columns) == 1
@@ -77,9 +77,9 @@ def test_menu_aligns_every_description_in_the_same_column():
 
 def test_registering_an_operation_adds_a_decorator_layer(extra_operation):
     without_extra = {
-        name: strategy
-        for name, strategy in OPERATIONS.items()
-        if strategy is not extra_operation
+        name: operation
+        for name, operation in OPERATIONS.items()
+        if operation is not extra_operation
     }
 
     lines = operation_lines(build_help_menu())

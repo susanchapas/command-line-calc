@@ -65,12 +65,12 @@ Result: 25 %of 200 = 12.5
 
 #### Adding an operation
 
-Operations are self-registering. Define a strategy in `app/strategies.py` and
+Operations are self-registering. Define an operation in `app/operations.py` and
 decorate it with `@register`:
 
 ```python
 @register
-class LogarithmStrategy(OperationStrategy):
+class Logarithm(Operation):
     name = "logarithm"
     symbol = "log"
     description = "the log of a in base b"
@@ -133,6 +133,8 @@ Settings are read from the environment (and an optional `.env` file via
 ```bash
 cp .env.example .env
 ```
+
+`.env` is intentionally not committed; `.env.example` is the template.
 
 **Base directories** — created on startup if they do not exist:
 
@@ -216,8 +218,7 @@ command-line-calculator/
 │   ├── logger.py
 │   ├── main.py
 │   ├── observers.py
-│   ├── operations.py
-│   └── strategies.py
+│   └── operations.py
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py
@@ -234,18 +235,18 @@ command-line-calculator/
 
 ## Design
 
-The application is organized around the patterns the assignment calls for:
+The application is organized around four design patterns:
 
-- **Strategy** (`strategies.py`) — interchangeable operation execution objects.
-- **Factory** (`factory.py`) — builds a strategy from an operation name.
+- **Factory** (`factory.py`) — builds an operation instance from its name.
 - **Decorator** (`help_menu.py`) — the `help` menu is a `HelpComponent`
   (`CommandHelp`) wrapped by `HelpDecorator` subclasses. `build_help_menu`
   stacks one `OperationHelp` decorator per registered operation, so the menu
   is assembled from the registry rather than written out by hand.
 - **Observer** (`observers.py`) — logging and CSV auto-save react to each calculation.
 - **Memento** (`calculator_memento.py`) — snapshots power `undo`/`redo`.
-- **Facade** (`calculator.py`) — the `Calculator` class hides these subsystems
-  and the `pandas` history behind a small interface used by the REPL.
+
+`Calculator` (`calculator.py`) is the interface the REPL uses: it hides these
+subsystems and the `pandas` history behind a small set of methods.
 
 Supporting modules: `exceptions.py` holds the error hierarchy (every raised
 error derives from `CalculatorError`), `input_validators.py` parses REPL
@@ -259,11 +260,12 @@ parsing numbers inside `try`/`except`).
 
 ## Run Tests
 
-Branch coverage is enabled in `pyproject.toml`, so this command enforces 100%
-of both lines and branches:
+Branch coverage is enabled in `pyproject.toml`, so this command reports both
+lines and branches and enforces the same 90% bar CI does. The suite currently
+sits at 100%:
 
 ```bash
-python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=100
+python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=90
 ```
 
 ### Coverage exceptions

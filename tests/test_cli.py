@@ -6,7 +6,7 @@ from app.calculator import Calculator
 from app.calculator_config import CalculatorConfig
 from app.cli import run_repl
 from app.exceptions import ConfigError, HistoryError
-from app.strategies import OPERATIONS
+from app.operations import OPERATIONS
 
 
 def drive(calculator, commands):
@@ -135,8 +135,8 @@ def test_help_lists_commands_and_operations(calculator):
 
     assert "Commands:" in outputs
     assert "Operations:" in outputs
-    for strategy in OPERATIONS.values():
-        assert any(strategy.name in line and strategy.description in line for line in outputs)
+    for operation in OPERATIONS.values():
+        assert any(operation.name in line and operation.description in line for line in outputs)
 
 
 def test_help_picks_up_a_newly_registered_operation(calculator, extra_operation):
