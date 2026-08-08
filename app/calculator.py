@@ -56,13 +56,23 @@ class Calculator:
         )
 
     def _load_existing_history(self) -> None:
-        if Path(self.config.history_file).exists():
+        if not Path(self.config.history_file).exists():
+            return
+        try:
             self.history.load(self.config.history_file)
-            logger.info(
-                "Restored %d calculations from %s.",
-                len(self.history),
+        except HistoryError as error:
+            logger.error(
+                "Ignoring unreadable history at %s: %s. It will be overwritten "
+                "by the next calculation.",
                 self.config.history_file,
+                error,
             )
+            return
+        logger.info(
+            "Restored %d calculations from %s.",
+            len(self.history),
+            self.config.history_file,
+        )
 
     def add_observer(self, observer: CalculationObserver) -> None:
         self._observers.append(observer)
@@ -77,12 +87,12 @@ class Calculator:
     def _auto_persist(self) -> None:
         """Mirror in-memory history to disk when auto-save is enabled.
 
-        ``perform`` is covered by :class:`AutoSaveObserver`; ``load`` persists
-        through here so a restored history survives a restart. ``undo``,
-        ``redo``, and ``clear`` deliberately do not, so that an explicit
-        ``save`` stays recoverable by ``load``. A failed auto-save is logged
-        rather than raised, because the in-memory history is still correct and
-        an explicit ``save`` reports the problem directly.
+        Every change to the history reaches disk: ``perform`` through
+        :class:`AutoSaveObserver`, and ``undo``, ``redo``, ``clear``, and
+        ``load`` through here, so what the user sees survives a restart. A
+        failed auto-save is logged rather than raised, because the in-memory
+        history is still correct and an explicit ``save`` reports the problem
+        directly.
         """
         if not self.config.auto_save:
             return
@@ -129,6 +139,7 @@ class Calculator:
             return False
         self.history.restore(memento.state)
         logger.info("Undid the last change; %d calculations remain.", len(self.history))
+        self._auto_persist()
         return True
 
     def redo(self) -> bool:
@@ -138,12 +149,14 @@ class Calculator:
             return False
         self.history.restore(memento.state)
         logger.info("Redid the last change; %d calculations remain.", len(self.history))
+        self._auto_persist()
         return True
 
     def clear(self) -> None:
         logger.info("Clearing %d calculations from the history.", len(self.history))
         self.caretaker.save_state(self._snapshot())
         self.history.clear()
+        self._auto_persist()
 
     def save(self, path: Path | str | None = None) -> Path:
         target = Path(path) if path is not None else Path(self.config.history_file)

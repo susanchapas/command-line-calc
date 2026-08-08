@@ -150,6 +150,23 @@ def test_loads_existing_history_on_start(config):
     assert revived.calculations()[0].result == 15
 
 
+def test_corrupt_history_does_not_prevent_startup(config):
+    config.history_file.write_text("not,a,calculator,history\n1,2,3,4\n", encoding="utf-8")
+
+    calculator = Calculator(config=config, observers=[])
+
+    assert calculator.calculations() == ()
+
+
+def test_corrupt_history_is_reported_at_startup(config, caplog):
+    config.history_file.write_text("not,a,calculator,history\n1,2,3,4\n", encoding="utf-8")
+
+    with caplog.at_level(logging.ERROR, logger="calculator"):
+        Calculator(config=config, observers=[])
+
+    assert f"Ignoring unreadable history at {config.history_file}" in caplog.text
+
+
 def test_default_observers_autosave_when_enabled(tmp_path):
     config = CalculatorConfig(
         log_dir=tmp_path,
@@ -192,7 +209,7 @@ def reloaded_count(config):
     return len(Calculator(config=config, observers=[]).calculations())
 
 
-def test_undo_leaves_the_history_file_alone(autosave_config):
+def test_undo_persists_when_autosaving(autosave_config):
     calculator = Calculator(config=autosave_config)
     calculator.perform("add", 1, 1)
     calculator.perform("add", 2, 2)
@@ -200,10 +217,10 @@ def test_undo_leaves_the_history_file_alone(autosave_config):
     calculator.undo()
 
     assert len(calculator.calculations()) == 1
-    assert reloaded_count(autosave_config) == 2
+    assert reloaded_count(autosave_config) == 1
 
 
-def test_redo_leaves_the_history_file_alone(autosave_config):
+def test_redo_persists_when_autosaving(autosave_config):
     calculator = Calculator(config=autosave_config)
     calculator.perform("add", 1, 1)
     calculator.perform("add", 2, 2)
@@ -215,17 +232,17 @@ def test_redo_leaves_the_history_file_alone(autosave_config):
     assert reloaded_count(autosave_config) == 2
 
 
-def test_clear_leaves_the_history_file_alone(autosave_config):
+def test_clear_persists_when_autosaving(autosave_config):
     calculator = Calculator(config=autosave_config)
     calculator.perform("add", 1, 1)
 
     calculator.clear()
 
     assert calculator.calculations() == ()
-    assert reloaded_count(autosave_config) == 1
+    assert reloaded_count(autosave_config) == 0
 
 
-def test_clear_does_not_destroy_an_explicit_save(autosave_config):
+def test_clear_also_clears_an_explicit_save_to_the_history_file(autosave_config):
     calculator = Calculator(config=autosave_config)
     calculator.perform("add", 2, 3)
     calculator.save()
@@ -233,7 +250,16 @@ def test_clear_does_not_destroy_an_explicit_save(autosave_config):
     calculator.clear()
     calculator.load()
 
-    assert len(calculator.calculations()) == 1
+    assert calculator.calculations() == ()
+
+
+def test_cleared_history_stays_cleared_across_a_restart(autosave_config):
+    calculator = Calculator(config=autosave_config)
+    calculator.perform("add", 2, 3)
+
+    calculator.clear()
+
+    assert reloaded_count(autosave_config) == 0
 
 
 def test_load_persists_when_autosaving(autosave_config, tmp_path):

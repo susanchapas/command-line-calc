@@ -290,7 +290,7 @@ def test_load_reports_non_numeric_values(calculator, tmp_path):
     assert any("non-numeric" in line for line in outputs)
 
 
-def test_save_clear_load_round_trip_with_autosave(tmp_path):
+def test_clear_reaches_the_history_file_with_autosave(tmp_path):
     config = CalculatorConfig(
         log_dir=tmp_path / "logs",
         history_dir=tmp_path / "history",
@@ -301,7 +301,7 @@ def test_save_clear_load_round_trip_with_autosave(tmp_path):
 
     _, outputs = drive(calculator, ["add 2 3", "save", "clear", "load", "history", "exit"])
 
-    assert "1. 2 + 3 = 5" in outputs
+    assert "History is empty." in outputs
 
 
 def test_autosave_failure_does_not_stop_the_repl(tmp_path):
